@@ -13,7 +13,7 @@ The WinCoins contract allows users to:
 ## Features
 
 - **Event Creation**: Anyone can create an event with multiple outcomes and a prediction deadline.
-- **Proportional Prediction Pools**: Users can bet on any outcome, creating separate pools for each.
+- **Proportional Prediction Pools**: Users can predict on any outcome, creating separate pools for each.
 - **Time-Limited Prediction**: Prediction is only allowed before the specified deadline.
 - **Proportional Payouts**: Winners receive payouts proportional to their contribution to the winning pool.
 - **Creator Control**: Only event creators can resolve their events.
@@ -103,8 +103,8 @@ npm start            # or npm run serve:prod
 
 ### Connecting to the Frontend
 
-1. Open http://localhost:8090 in your browser
-2. Connect MetaMask wallet
+1. Open http://localhost:8090 in your browser.
+2. Connect MetaMask wallet.
 3. Select network from the network selector:
    - For localhost: Contract address will be requested (auto-saved in `.contract-address`).
    - For other networks: Default contract address `0x1120396991A9eB527a886D4025F6E7A82471F537`.
@@ -174,18 +174,18 @@ After deployment, the contract address is:
 ## Usage Example
 
 ```javascript
-// Create an event
+// Create an event.
 const outcomes = ["Team A wins", "Team B wins", "Draw"];
-const predictionDuration = 3600; // 1 hour
+const predictionDuration = 3600; // 1 hour.
 await winCoins.createEvent("Football Match", outcomes, predictionDuration);
 
-// Place bets
-await winCoins.placeBet(eventId, 0, { value: ethers.utils.parseEther("1.0") });
+// Place predictions.
+await winCoins.makePrediction(eventId, 0, { value: ethers.utils.parseEther("1.0") });
 
-// Resolve event (creator only, after deadline)
-await winCoins.resolveEvent(eventId, 0); // Team A wins
+// Resolve event (creator only, after deadline).
+await winCoins.resolveEvent(eventId, 0); // Team A wins.
 
-// Claim payout (winners only)
+// Claim payout (winners only).
 await winCoins.claimPayout(eventId);
 ```
 
@@ -207,7 +207,7 @@ CONTRACT_ADDRESS=0x... npm run interact
 
 ## Gas Optimization
 
-- Efficient storage patterns for events and bets.
+- Efficient storage patterns for events and predictions.
 - Minimal external calls during critical operations.
 - Batch operations where possible.
 
@@ -235,10 +235,10 @@ MIT License - see LICENSE file for details.
 
 - No automatic oracle integration.
 - Events must be resolved manually by creators.
-- Minimum bet amount not enforced (could lead to dust).
+- Minimum prediction amount not enforced (could lead to dust).
 
 ## Future Enhancements
 
 - Oracle integration for automatic event resolution.
-- Minimum bet amounts.
+- Minimum prediction amounts.
 - Multi-token support.
