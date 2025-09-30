@@ -6,8 +6,26 @@ class WinCoinsApp {
         this.userPredictions = [];
         this.isConnected = false;
         this.userAddress = null;
+        this.currentNetworkSymbol = 'ETH'; // Default currency symbol
 
         this.initializeApp();
+    }
+
+    // Get currency symbol from current network
+    async getCurrentCurrencySymbol() {
+        if (window.ethereum) {
+            try {
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                const network = NetworkUtils.getNetworkByChainId(chainId);
+                if (network && network.nativeCurrency) {
+                    this.currentNetworkSymbol = network.nativeCurrency.symbol;
+                    return network.nativeCurrency.symbol;
+                }
+            } catch (error) {
+                console.error('Failed to get network currency symbol:', error);
+            }
+        }
+        return this.currentNetworkSymbol;
     }
 
     async initializeApp() {
@@ -29,6 +47,9 @@ class WinCoinsApp {
             this.setupDarkMode();
             this.setupDateTimePicker();
             this.setupNetworkSelector();
+
+            // Initialize currency symbol
+            await this.getCurrentCurrencySymbol();
 
             // Check for existing wallet connection.
             await this.checkExistingWalletConnection();
@@ -342,11 +363,17 @@ class WinCoinsApp {
 
     async reconnectToNetwork() {
         try {
+            // Update currency symbol for new network
+            await this.getCurrentCurrencySymbol();
+
             // Reinitialize contract with new network
             await winCoinsContract.initialize();
 
             // Reconnect wallet to get signer for new network
             await this.connectWallet();
+
+            // Reload events and update UI with new currency symbol
+            await this.loadEvents();
 
         } catch (error) {
             console.error('Failed to reconnect to new network:', error);
@@ -446,7 +473,8 @@ class WinCoinsApp {
         if (this.isConnected) {
             try {
                 const balance = await winCoinsContract.getBalance();
-                document.getElementById('walletBalance').textContent = `${new Decimal(balance).toFixed(4)} ETH`;
+                const symbol = await this.getCurrentCurrencySymbol();
+                document.getElementById('walletBalance').textContent = `${new Decimal(balance).toFixed(4)} ${symbol}`;
             } catch (error) {
                 console.error('Failed to update balance:', error);
             }
@@ -586,7 +614,7 @@ class WinCoinsApp {
                 </div>
                 <div class="event-footer">
                     <span class="outcome-count">${event.outcomes.length} outcomes</span>
-                    <span class="total-pool">${event.totalPoolAmount} ETH</span>
+                    <span class="total-pool">${event.totalPoolAmount} ${this.currentNetworkSymbol}</span>
                 </div>
             </div>
         `;
@@ -622,13 +650,13 @@ class WinCoinsApp {
                 <div class="outcome-card ${winnerClass} ${canPredict ? 'clickable' : ''}" data-outcome-index="${index}">
                     <div class="outcome-header">
                         <div class="outcome-name">${outcome} ${isWinner ? '👑' : ''}</div>
-                        <div class="outcome-pool">${poolAmounts[index]} ETH</div>
+                        <div class="outcome-pool">${poolAmounts[index]} ${this.currentNetworkSymbol}</div>
                     </div>
                     ${canPredict ? `
                         <div class="prediction-controls hidden">
                             <div class="amount-input-group">
                                 <input type="number" class="prediction-amount-input" placeholder="0.01" step="0.01" min="0.01">
-                                <span class="amount-suffix">ETH</span>
+                                <span class="amount-suffix">${this.currentNetworkSymbol}</span>
                             </div>
                             <button class="btn btn-primary btn-predict-outcome" onclick="app.makePredictionFromCard(${eventId}, ${index})">
                                 Predict ${outcome}
