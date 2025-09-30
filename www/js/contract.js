@@ -40,9 +40,12 @@ class WinCoinsContract {
         if (typeof window.ethereum !== 'undefined') {
             this.provider = new ethers.providers.Web3Provider(window.ethereum);
 
-            // Try to get contract address from localStorage or use default.
-            this.contractAddress = localStorage.getItem('wincoins_contract_address') ||
-                                 prompt('Please enter the WinCoins contract address:');
+            // Get default contract address from first network entry
+            const firstNetwork = Object.values(NETWORKS)[0];
+            const defaultAddress = firstNetwork?.contractAddress || null;
+
+            // Try to get contract address from localStorage or use default from networks.js
+            this.contractAddress = localStorage.getItem('wincoins_contract_address') || defaultAddress;
 
             if (this.contractAddress) {
                 localStorage.setItem('wincoins_contract_address', this.contractAddress);
