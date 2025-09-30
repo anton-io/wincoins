@@ -20,7 +20,7 @@ const NETWORKS = {
             'https://explorer.celo.org',
             'https://celoscan.io'
         ],
-        contractAddress: '0x1120396991A9eB527a886D4025F6E7A82471F537',
+        contractAddress: '0xc7ccc056407073109240DceF780ea433F0bEEb05',
         faucetUrl: null,
         testnet: false
     },
@@ -43,7 +43,7 @@ const NETWORKS = {
             'https://celo-alfajores.blockscout.com',
             'https://alfajores.celoscan.io'
         ],
-        contractAddress: '0x1120396991A9eB527a886D4025F6E7A82471F537',
+        contractAddress: '0xc7ccc056407073109240DceF780ea433F0bEEb05',
         faucetUrl: 'https://faucet.celo.org/alfajores',
         testnet: true
     },
@@ -62,7 +62,7 @@ const NETWORKS = {
             'wss://wss.api.moonbeam.network'
         ],
         blockExplorerUrls: ['https://moonscan.io'],
-        contractAddress: '0x1120396991A9eB527a886D4025F6E7A82471F537',
+        contractAddress: '0xc7ccc056407073109240DceF780ea433F0bEEb05',
         faucetUrl: null,
         testnet: false
     },
@@ -81,7 +81,7 @@ const NETWORKS = {
             'wss://wss.api.moonbase.moonbeam.network'
         ],
         blockExplorerUrls: ['https://moonbase.moonscan.io'],
-        contractAddress: '0x1120396991A9eB527a886D4025F6E7A82471F537',
+        contractAddress: '0xc7ccc056407073109240DceF780ea433F0bEEb05',
         faucetUrl: 'https://apps.moonbeam.network/moonbase-alpha/faucet',
         testnet: true
     },
