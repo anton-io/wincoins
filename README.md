@@ -5,19 +5,19 @@ A decentralized prediction solution for managing events with multiple outcomes o
 ## Overview
 
 The WinCoins contract allows users to:
-- Create events with multiple possible outcomes
-- Place predictions on different outcomes
-- Set prediction deadlines for events
-- Resolve events and distribute winnings proportionally to winners
+- Create events with multiple possible outcomes.
+- Place predictions on different outcomes.
+- Set prediction deadlines for events.
+- Resolve events and distribute winnings proportionally to winners.
 
 ## Features
 
-- **Event Creation**: Anyone can create an event with multiple outcomes and a prediction deadline
-- **Proportional Prediction Pools**: Users can bet on any outcome, creating separate pools for each
-- **Time-Limited Prediction**: Prediction is only allowed before the specified deadline
-- **Proportional Payouts**: Winners receive payouts proportional to their contribution to the winning pool
-- **Creator Control**: Only event creators can resolve their events
-- **Security**: Built with OpenZeppelin contracts for reentrancy protection
+- **Event Creation**: Anyone can create an event with multiple outcomes and a prediction deadline.
+- **Proportional Prediction Pools**: Users can bet on any outcome, creating separate pools for each.
+- **Time-Limited Prediction**: Prediction is only allowed before the specified deadline.
+- **Proportional Payouts**: Winners receive payouts proportional to their contribution to the winning pool.
+- **Creator Control**: Only event creators can resolve their events.
+- **Security**: Built with OpenZeppelin contracts for reentrancy protection.
 
 ## Smart Contract Architecture
 
@@ -59,42 +59,78 @@ The contract manages multiple events, each with:
 The project includes a complete web frontend located in the `www/` directory with:
 
 ### Features
-- **User Dashboard**: Browse events, place bets, track winnings
-- **Admin Panel**: Create events, manage outcomes, resolve events
-- **Web3 Integration**: MetaMask wallet connection and blockchain interaction
-- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **User Dashboard**: Browse events, place predictions, track winnings.
+- **Admin Panel**: Create events, manage outcomes, resolve events.
+- **Web3 Integration**: MetaMask wallet connection and blockchain interaction.
+- **Multi-Network Support**: Celo, Celo Alfajores, Moonbeam, Moonbase Alpha, and localhost.
+- **Responsive Design**: Works on desktop, tablet, and mobile devices.
 
-### Quick Start
-1. **Deploy contract to local network:**
+### Quick Start - Development Mode
+
+**Option 1: Automated startup (recommended)**
+```bash
+./_start              # Starts Hardhat node, deploys contract, and serves frontend
+```
+
+**Option 2: Manual setup**
+1. **Start local blockchain:**
    ```bash
-   npm run node          # Terminal 1: Start local blockchain
-   npm run deploy:localhost  # Terminal 2: Deploy contract
+   npm run node          # Terminal 1: Start Hardhat node at localhost:8545
    ```
 
-2. **Start web server:**
+2. **Deploy contract:**
    ```bash
-   npm run serve         # Serves frontend at http://localhost:8090
+   npm run deploy:localhost  # Terminal 2: Deploy contract (address saved to .contract-address)
    ```
 
-3. **Or run everything together:**
+3. **Start development server:**
    ```bash
-   npm run dev          # Runs blockchain + web server concurrently
+   npm run serve         # Serves frontend at http://localhost:8090 (binds to 0.0.0.0)
    ```
 
-4. **Connect and use:**
-   - Open http://localhost:8090 in your browser
-   - Connect MetaMask wallet
-   - Enter deployed contract address
-   - Start creating events or placing bets!
+**Option 3: All-in-one development mode**
+```bash
+npm run dev          # Runs Hardhat node + web server concurrently
+```
+
+### Production Mode
+
+To run the web server in production mode (binds to localhost only):
+
+```bash
+npm start            # or npm run serve:prod
+```
+
+### Connecting to the Frontend
+
+1. Open http://localhost:8090 in your browser
+2. Connect MetaMask wallet
+3. Select network from the network selector:
+   - For localhost: Contract address will be requested (auto-saved in `.contract-address`).
+   - For other networks: Default contract address `0x1120396991A9eB527a886D4025F6E7A82471F537`.
+4. Start creating events or placing predictions!
+
+### Network Configuration
+
+Supported networks are configured in `www/js/networks.js`:
+- **Celo Mainnet**: Default contract pre-configured.
+- **Celo Alfajores** (testnet): Default contract pre-configured.
+- **Moonbeam Mainnet**: Default contract pre-configured.
+- **Moonbase Alpha** (testnet): Default contract pre-configured.
+- **Hardhat Local**: Contract address set during deployment.
+
+### Clean URLs
+
+The web server supports clean URLs - both `/about` and `/about.html` will work.
 
 ## Testing
 
 The project includes comprehensive tests covering:
-- Event creation with validation
-- Prediction mechanics and edge cases
-- Event resolution and access controls
-- Payout distribution and proportional calculations
-- Security and reentrancy protection
+- Event creation with validation.
+- Prediction mechanics and edge cases.
+- Event resolution and access controls.
+- Payout distribution and proportional calculations.
+- Security and reentrancy protection.
 
 Run tests with:
 ```bash
@@ -152,49 +188,46 @@ CONTRACT_ADDRESS=0x... npm run interact
 
 ## Security Considerations
 
-- **Reentrancy Protection**: Uses OpenZeppelin's ReentrancyGuard
-- **Access Control**: Event resolution restricted to creators
-- **Input Validation**: Comprehensive validation of all inputs
-- **Time Constraints**: Prediction deadlines enforced on-chain
-- **Double Claiming Prevention**: Users cannot claim payouts twice
+- **Reentrancy Protection**: Uses OpenZeppelin's ReentrancyGuard.
+- **Access Control**: Event resolution restricted to creators.
+- **Input Validation**: Comprehensive validation of all inputs.
+- **Time Constraints**: Prediction deadlines enforced on-chain.
+- **Double Claiming Prevention**: Users cannot claim payouts twice.
 
 ## Gas Optimization
 
-- Efficient storage patterns for events and bets
-- Minimal external calls during critical operations
-- Batch operations where possible
+- Efficient storage patterns for events and bets.
+- Minimal external calls during critical operations.
+- Batch operations where possible.
 
 ## Events
 
 The contract emits the following events:
-- `EventCreated`: When a new event is created
-- `BetPlaced`: When a user places a bet
-- `EventResolved`: When an event is resolved
-- `PayoutClaimed`: When a user claims their payout
+- `EventCreated`: When a new event is created.
+- `PredictionPlaced`: When a user places a prediction.
+- `EventResolved`: When an event is resolved.
+- `PayoutClaimed`: When a user claims their payout.
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - see LICENSE file for details.
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
+1. Fork the repository.
+2. Create a feature branch.
+3. Add tests for new functionality.
+4. Ensure all tests pass.
+5. Submit a pull request.
 
 ## Known Limitations
 
-- Events must be resolved manually by creators
-- No automatic oracle integration
-- Minimum bet amount not enforced (could lead to dust)
-- No maximum number of outcomes per event
+- No automatic oracle integration.
+- Events must be resolved manually by creators.
+- Minimum bet amount not enforced (could lead to dust).
 
 ## Future Enhancements
 
-- Oracle integration for automatic event resolution
-- Minimum bet amounts
-- Event cancellation mechanism
-- Multi-token support beyond ETH
-- Time-weighted prediction multipliers
+- Oracle integration for automatic event resolution.
+- Minimum bet amounts.
+- Multi-token support.
