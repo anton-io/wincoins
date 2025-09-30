@@ -1,0 +1,31 @@
+{
+  "name": "src",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy": "npx hardhat run scripts/deploy.js",
+    "deploy:localhost": "npx hardhat run scripts/deploy.js --network localhost",
+    "interact": "npx hardhat run scripts/interact.js",
+    "node": "npx hardhat node",
+    "clean": "npx hardhat clean",
+    "serve": "node www/serve.js",
+    "dev": "concurrently \"npm run node\" \"npm run serve\"",
+    "start": "npm run serve"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "@openzeppelin/contracts": "^4.9.0",
+    "concurrently": "^9.2.1",
+    "hardhat": "^2.17.1"
+  },
+  "dependencies": {
+    "decimal.js": "^10.6.0"
+  }
+}
