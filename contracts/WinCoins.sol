@@ -24,6 +24,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
         mapping(uint256 => mapping(address => uint256)) userPredictions;
         mapping(uint256 => address[]) poolParticipants;
         address creator;
+        address oracle;
         uint256 predictionDeadline;
         uint256 winningOutcome;
         bool isResolved;
@@ -104,10 +105,17 @@ contract WinCoins is ReentrancyGuard, Ownable {
         uint256 amount
     );
 
+
     modifier onlyEventCreator(uint256 eventId) {
         require(events[eventId].creator == msg.sender, "Only event creator can call this");
         _;
     }
+
+    modifier onlyEventOracle(uint256 eventId) {
+        require(events[eventId].oracle == msg.sender, "Only event oracle can call this");
+        _;
+    }
+
 
     modifier eventExists(uint256 eventId) {
         require(eventId < nextEventId, "Event does not exist");
@@ -134,10 +142,17 @@ contract WinCoins is ReentrancyGuard, Ownable {
     function createEvent(
         string memory name,
         string[] memory outcomes,
-        uint256 predictionDuration
+        uint256 predictionDuration,
+        address oracle
     ) external returns (uint256) {
         require(outcomes.length >= 2, "Must have at least 2 outcomes");
         require(predictionDuration > 0, "Prediction duration must be positive");
+        
+        // If oracle is zero address, use creator as oracle
+        address finalOracle = oracle;
+        if (oracle == address(0)) {
+            finalOracle = msg.sender;
+        }
 
         uint256 eventId = nextEventId++;
         Event storage newEvent = events[eventId];
@@ -146,6 +161,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
         newEvent.name = name;
         newEvent.outcomes = outcomes;
         newEvent.creator = msg.sender;
+        newEvent.oracle = finalOracle;
         newEvent.predictionDeadline = block.timestamp + predictionDuration;
         newEvent.isResolved = false;
         newEvent.isCancelled = false;
@@ -156,6 +172,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
 
         return eventId;
     }
+
 
     function makePrediction(uint256 eventId, uint256 outcomeIndex)
         external
@@ -204,7 +221,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
     function resolveEvent(uint256 eventId, uint256 winningOutcomeIndex)
         external
         eventExists(eventId)
-        onlyEventCreator(eventId)
+        onlyEventOracle(eventId)
         eventNotCancelled(eventId)
     {
         require(!events[eventId].isResolved, "Event already resolved");
@@ -328,6 +345,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
             string memory name,
             string[] memory outcomes,
             address creator,
+            address oracle,
             uint256 predictionDeadline,
             bool isResolved,
             bool isCancelled,
@@ -342,6 +360,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
             eventData.name,
             eventData.outcomes,
             eventData.creator,
+            eventData.oracle,
             eventData.predictionDeadline,
             eventData.isResolved,
             eventData.isCancelled,
