@@ -32,6 +32,11 @@ const server = http.createServer((req, res) => {
         pathname = '/index.html';
     }
 
+    // If pathname doesn't have an extension, try adding .html
+    if (!path.extname(pathname)) {
+        pathname = pathname + '.html';
+    }
+
     // Construct file path.
     const filePath = path.join(__dirname, pathname);
 
