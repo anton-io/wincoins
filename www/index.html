@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinCoins - Decentralized Prediction Platform</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/decimal.js@10.4.3/decimal.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="header-brand">
+                    <h1><a class="link-plain" href="/">🏆️ WinCoins</a></h1>
+                    <p>Decentralized Event Prediction Platform</p>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link active">Home</a>
+                    <a href="about.html" class="nav-link">About</a>
+                </nav>
+                <div class="header-controls">
+                    <div class="wallet-info">
+                        <button id="connectWallet" class="btn btn-primary">Connect Wallet</button>
+                        <div id="walletStatus" class="wallet-status hidden">
+                            <span id="walletAddress"></span>
+                            <span id="walletBalance"></span>
+                        </div>
+                        <div class="network-selector">
+                            <button id="networkButton" class="btn btn-outline">
+                                <span id="networkName">Select Network</span>
+                                <span class="network-dropdown-arrow">▼</span>
+                            </button>
+                            <div id="networkDropdown" class="network-dropdown hidden">
+                                <div class="network-section">
+                                    <h4>Mainnets</h4>
+                                    <div class="network-options" id="mainnetOptions"></div>
+                                </div>
+                                <div class="network-section">
+                                    <h4>Testnets</h4>
+                                    <div class="network-options" id="testnetOptions"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dark Mode Toggle - Fixed Position -->
+    <button id="darkModeToggle" class="btn btn-icon dark-mode-fixed" aria-label="Toggle dark mode">
+        <span class="icon-sun">☀️</span>
+        <span class="icon-moon">🌙</span>
+    </button>
+
+    <nav class="tab-nav">
+        <div class="container" style="padding: 0">
+            <button class="tab-btn" data-tab="new-event">➕ New Event</button>
+            <button class="tab-btn active" data-tab="events">📅 Events</button>
+            <button class="tab-btn" data-tab="my-predictions">🔮 My Predictions</button>
+            <button class="tab-btn" data-tab="admin-events">🎛️️ Admin Events</button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Create New Event Tab -->
+        <section id="new-event-tab" class="tab-content">
+            <h2>➕ Create New Event</h2>
+            <p class="tab-description">Create a new prediction event for others to participate in.</p>
+
+            <form id="createEventForm" class="event-form">
+                <div class="form-group">
+                    <label for="eventName">Event Name:</label>
+                    <input type="text" id="eventName" required placeholder="e.g., Manchester vs Liverpool">
+                    <small class="form-help">Choose a clear, descriptive name for your event.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventOutcomes">Possible Outcomes (one per line):</label>
+                    <textarea id="eventOutcomes" rows="4" required placeholder="Team A wins&#10;Team B wins&#10;Draw"></textarea>
+                    <small class="form-help">List all possible outcomes, each on a separate line.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="predictionDeadline">Prediction Deadline:</label>
+                    <input type="datetime-local" id="predictionDeadline" required>
+                    <small class="form-help">Select when predictions should close for this event.</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Create Event</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Events Tab -->
+        <section id="events-tab" class="tab-content active">
+            <h2>📅&nbsp;&nbsp; Available Events</h2>
+            <div class="filters">
+                <select id="eventFilter">
+                    <option value="all">All Events</option>
+                    <option value="open">Open for Predictions</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+                <button id="refreshEvents" class="btn btn-secondary">Refresh</button>
+            </div>
+
+            <div id="eventsContainer" class="events-container">
+                <div class="loading">Loading events...</div>
+            </div>
+        </section>
+
+        <!-- My Predictions Tab -->
+        <section id="my-predictions-tab" class="tab-content">
+            <h2>🔮&nbsp;&nbsp; My Predictions</h2>
+            <p class="tab-description">Track your predictions and claim winnings from resolved events.</p>
+
+            <div id="userPredictionsContainer" class="predictions-container">
+                <div class="loading">Loading your predictions...</div>
+            </div>
+        </section>
+
+        <!-- Admin Events Tab -->
+        <section id="admin-events-tab" class="tab-content">
+            <h2>🎛️&nbsp;&nbsp; Admin My Events</h2>
+            <p class="tab-description">Manage and resolve events you've created.</p>
+
+            <div id="adminEventsContainer" class="admin-events-container">
+                <div class="loading">Loading your events...</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Event Detail Modal -->
+    <div id="eventModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Confirm Action</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Are you sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmCancel" class="btn btn-secondary">Cancel</button>
+                <button id="confirmOk" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notifications" class="notifications"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 WinCoins. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Check if ethers is loaded.
+        if (typeof ethers === 'undefined') {
+            console.error('Ethers.js failed to load. Please check your internet connection.');
+            document.body.innerHTML = '<div style="padding: 50px; text-align: center; color: red;"><h1>Error: Ethers.js Library Not Loaded</h1><p>Please check your internet connection and refresh the page.</p></div>';
+        }
+    </script>
+    <script src="js/networks.js"></script>
+    <script src="js/contract.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

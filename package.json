@@ -11,9 +11,10 @@
     "interact": "npx hardhat run scripts/interact.js",
     "node": "npx hardhat node",
     "clean": "npx hardhat clean",
-    "serve": "node www/serve.js",
+    "serve": "cross-env NODE_ENV=development node www/serve.js",
+    "serve:prod": "cross-env NODE_ENV=production node www/serve.js",
     "dev": "concurrently \"npm run node\" \"npm run serve\"",
-    "start": "npm run serve"
+    "start": "npm run serve:prod"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
     "@openzeppelin/contracts": "^4.9.0",
     "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "hardhat": "^2.17.1"
   },
   "dependencies": {

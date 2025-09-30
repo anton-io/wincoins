@@ -5,9 +5,14 @@ coverage.json
 typechain
 typechain-types
 
+# Hardhat files.
+cache
+artifacts
+
 # IDE files.
 .vscode
 .idea
 
 # Other files.
+.contract-address
 .DS_Store

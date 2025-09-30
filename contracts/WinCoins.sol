@@ -447,8 +447,8 @@ contract WinCoins is ReentrancyGuard, Ownable {
 
         eventData.unclaimedWinningsCollected = true;
 
-        (bool success, ) = payable(owner()).call{value: unclaimedAmount}("");
-        require(success, "Unclaimed winnings transfer failed");
+        (bool success2, ) = payable(owner()).call{value: unclaimedAmount}("");
+        require(success2, "Unclaimed winnings transfer failed");
 
         emit UnclaimedWinningsCollected(eventId, owner(), unclaimedAmount);
     }

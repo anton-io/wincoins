@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - WinCoins</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><a class="link-plain" href="/">🏆️ WinCoins</a></h1>
+                    <p>Decentralized Event Prediction Platform</p>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="about.html" class="nav-link active">About</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="about-content">
+            <section class="hero-section">
+                <h1>About WinCoins</h1>
+                <p class="hero-subtitle">A decentralized prediction platform where you can create events, make predictions, and earn rewards on the blockchain.</p>
+            </section>
+
+            <section class="what-is-section">
+                <h2>What is WinCoins?</h2>
+                <p>WinCoins is a smart contract-powered prediction platform that allows users to create prediction pools for any future event with multiple possible outcomes. Whether it's sports matches, election results, market predictions, or any other event with uncertain outcomes, WinCoins provides a fair and transparent way to put your predictions to the test.</p>
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">✨</div>
+                        <h3>Create Events</h3>
+                        <p>Set up prediction events with custom outcomes and deadlines</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔮</div>
+                        <h3>Make Predictions</h3>
+                        <p>Back outcomes you believe will happen</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🏆</div>
+                        <h3>Claim Winnings</h3>
+                        <p>Winners receive proportional payouts from the total pool</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💰</div>
+                        <h3>Earn Creator Fees</h3>
+                        <p>Event creators earn a share of the platform fees</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="how-it-works-section">
+                <h2>How WinCoins Works</h2>
+
+                <div>
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Event Creation</h3>
+                            <p><strong>Anyone can create an event</strong> by defining:</p>
+                            <ul>
+                                <li>Event name and description</li>
+                                <li>Possible outcomes (minimum 2)</li>
+                                <li>Prediction deadline (when betting closes)</li>
+                            </ul>
+                            <p>As the event creator, you'll earn a portion of the platform fees when the event is resolved.</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Prediction Phase</h3>
+                            <p><strong>Users place their predictions</strong> by:</p>
+                            <ul>
+                                <li>Choosing which outcome they believe will occur</li>
+                                <li>Deciding how much ETH to wager</li>
+                                <li>Confirming the transaction before the deadline</li>
+                            </ul>
+                            <p>
+                              All ETH wagered goes into outcome-specific pools.
+                              You can bet on multiple outcomes or add to existing predictions.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Event Resolution</h3>
+                            <p><strong>After the deadline passes</strong>, the event creator:</p>
+                            <ul>
+                                <li>Declares which outcome actually occurred</li>
+                                <li>The smart contract automatically calculates payouts</li>
+                                <li>A small fee (0.1% of winnings) is split between the platform and event creator</li>
+                            </ul>
+                            <p>Only the original event creator can resolve their events, ensuring accountability.</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Claiming Rewards</h3>
+                            <p><strong>Winners claim their share</strong> of the total pool:</p>
+                            <ul>
+                                <li>Payouts are proportional to your bet size within the winning outcome</li>
+                                <li>If you bet 10% of the winning pool, you get 10% of the total prize</li>
+                                <li>Event creators can withdraw their accumulated fees</li>
+                            </ul>
+                            <p>All transactions are transparent and verifiable on the blockchain.</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h3>Event Cancellation & Refunds</h3>
+                            <p><strong>If an event needs to be cancelled</strong>, the event creator can:</p>
+                            <ul>
+                                <li>Cancel the event before the prediction deadline passes</li>
+                                <li>All participants become eligible for full refunds of their prediction amounts</li>
+                                <li>Users can claim their complete refunds through the "My Predictions" tab</li>
+                                <li>No fees are charged on cancelled events - users get back exactly what they put in</li>
+                            </ul>
+                            <p>This ensures fairness when events cannot proceed as originally planned, protecting all participants' investments.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="payout-section">
+                <h2>Understanding Payouts</h2>
+                <div class="payout-example">
+                    <h3>Example Scenario</h3>
+                    <div class="scenario-details">
+                        <p><strong>Event:</strong> "Team A vs Team B"</p>
+                        <p><strong>Outcomes:</strong> Team A wins, Team B wins, Draw</p>
+
+                        <div class="pool-breakdown">
+                            <h4>Betting Results:</h4>
+                            <ul>
+                                <li>Team A wins: 2 ETH total (from 3 users)</li>
+                                <li>Team B wins: 6 ETH total (from 8 users)</li>
+                                <li>Draw: 2 ETH total (from 4 users)</li>
+                                <li><strong>Total Pool: 10 ETH</strong></li>
+                            </ul>
+                        </div>
+
+                        <div class="winning-scenario">
+                            <h4>If Team A wins:</h4>
+                            <p><em>Important: Fees are only charged on winnings (profit), not on returned stakes</em></p>
+                            <ul>
+                                <li><strong>Winnings calculation:</strong> Total pool (10 ETH) - Winning predictions (2 ETH) = 8 ETH in winnings</li>
+                                <li><strong>Fee calculation:</strong> 0.1% of winnings only = 8 ETH × 0.001 = 0.008 ETH total fees</li>
+                                <li><strong>Fee split:</strong> Platform gets 0.004 ETH, Creator gets 0.004 ETH</li>
+                                <li><strong>Pool after fees:</strong> 10 ETH - 0.008 ETH = 9.992 ETH available for winners</li>
+                                <li><strong>Payouts:</strong></li>
+                                <li>&nbsp;&nbsp; User who bet 0.5 ETH gets: (0.5 ÷ 2) × 9.992 = 2.498 ETH</li>
+                                <li>&nbsp;&nbsp; User who bet 1 ETH gets: (1 ÷ 2) × 9.992 = 4.996 ETH</li>
+                                <li>&nbsp;&nbsp; User who bet 0.5 ETH gets: (0.5 ÷ 2) × 9.992 = 2.498 ETH</li>
+                            </ul>
+                            <p><small><strong>Note:</strong> Winners get their original bet back PLUS their share of winnings from missed predictions, minus the small fee on winnings only.</small></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="safety-section">
+                <h2>Safety & Security</h2>
+                <div class="safety-features">
+                    <div class="safety-item">
+                        <h3>🔒 Smart Contract Security</h3>
+                        <p>Built with OpenZeppelin's battle-tested security patterns including reentrancy protection and access controls.</p>
+                    </div>
+                    <div class="safety-item">
+                        <h3>🔍 Transparent & Verifiable</h3>
+                        <p>All transactions and outcomes are recorded on the blockchain for complete transparency.</p>
+                    </div>
+                    <div class="safety-item">
+                        <h3>⏰ Time-locked Resolution</h3>
+                        <p>Events can only be resolved after the prediction deadline has passed, preventing manipulation.</p>
+                    </div>
+                    <div class="safety-item">
+                        <h3>💎 Unclaimed Protection</h3>
+                        <p>Winnings remain claimable for 10 years. After that, unclaimed funds may be collected by the platform.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="getting-started-section">
+                <h2>Getting Started</h2>
+                <div class="requirements">
+                    <h3>What You Need:</h3>
+                    <ul>
+                        <li><strong>MetaMask Wallet:</strong> Install the MetaMask browser extension</li>
+                        <li><strong>ETH for Gas:</strong> Small amounts of ETH to pay for transaction fees</li>
+                        <li><strong>Prediction Funds:</strong> ETH to back your predictions (any amount you're comfortable with)</li>
+                    </ul>
+                </div>
+
+                <div class="cta-section">
+                    <h3>Ready to Start?</h3>
+                    <p>Connect your wallet and explore existing events, or create your own prediction market today!</p>
+                    <a href="index.html" class="btn btn-primary">Go to Platform</a>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 WinCoins. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
