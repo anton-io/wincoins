@@ -8,12 +8,16 @@ describe("WinCoins", function () {
   let addr1;
   let addr2;
   let addr3;
+  let oracle;
 
   beforeEach(async function () {
     WinCoins = await ethers.getContractFactory("WinCoins");
-    [owner, addr1, addr2, addr3] = await ethers.getSigners();
+    [owner, addr1, addr2, addr3, oracle] = await ethers.getSigners();
     winCoins = await WinCoins.deploy();
     await winCoins.deployed();
+
+    // Register oracle for testing
+    await winCoins.registerOracle("test-oracle", oracle.address);
   });
 
   describe("Event Creation", function () {
@@ -21,7 +25,7 @@ describe("WinCoins", function () {
       const outcomes = ["Team A wins", "Team B wins", "Draw"];
       const predictionDuration = 3600; // 1 hour.
 
-      const tx = await winCoins.createEvent("Football Match", outcomes, predictionDuration);
+      const tx = await winCoins.createEvent("Football Match", outcomes, predictionDuration, oracle.address);
       const receipt = await tx.wait();
 
       expect(receipt.events[0].event).to.equal("EventCreated");
@@ -33,6 +37,7 @@ describe("WinCoins", function () {
       expect(eventDetails.name).to.equal("Football Match");
       expect(eventDetails.outcomes).to.deep.equal(outcomes);
       expect(eventDetails.creator).to.equal(owner.address);
+      expect(eventDetails.oracle).to.equal(oracle.address);
       expect(eventDetails.isResolved).to.equal(false);
     });
 
@@ -41,7 +46,7 @@ describe("WinCoins", function () {
       const predictionDuration = 3600;
 
       await expect(
-        winCoins.createEvent("Invalid Event", outcomes, predictionDuration)
+        winCoins.createEvent("Invalid Event", outcomes, predictionDuration, oracle.address)
       ).to.be.revertedWith("Must have at least 2 outcomes");
     });
 
@@ -50,7 +55,7 @@ describe("WinCoins", function () {
       const predictionDuration = 0;
 
       await expect(
-        winCoins.createEvent("Invalid Event", outcomes, predictionDuration)
+        winCoins.createEvent("Invalid Event", outcomes, predictionDuration, oracle.address)
       ).to.be.revertedWith("Prediction duration must be positive");
     });
   });
@@ -62,7 +67,7 @@ describe("WinCoins", function () {
       const outcomes = ["Team A wins", "Team B wins", "Draw"];
       const predictionDuration = 3600;
 
-      const tx = await winCoins.createEvent("Football Match", outcomes, predictionDuration);
+      const tx = await winCoins.createEvent("Football Match", outcomes, predictionDuration, oracle.address);
       const receipt = await tx.wait();
       eventId = receipt.events[0].args.eventId;
     });
@@ -150,7 +155,7 @@ describe("WinCoins", function () {
       const outcomes = ["Team A wins", "Team B wins", "Draw"];
       const predictionDuration = 3600; // 1 hour for testing.
 
-      const tx = await winCoins.createEvent("Football Match", outcomes, predictionDuration);
+      const tx = await winCoins.createEvent("Football Match", outcomes, predictionDuration, oracle.address);
       const receipt = await tx.wait();
       eventId = receipt.events[0].args.eventId;
 
@@ -166,7 +171,7 @@ describe("WinCoins", function () {
     it("Should allow event creator to resolve event", async function () {
       const winningOutcome = 0;
 
-      const tx = await winCoins.resolveEvent(eventId, winningOutcome);
+      const tx = await winCoins.connect(oracle).resolveEvent(eventId, winningOutcome);
       const receipt = await tx.wait();
 
       expect(receipt.events[0].event).to.equal("EventResolved");
@@ -178,23 +183,23 @@ describe("WinCoins", function () {
       expect(eventDetails.winningOutcome).to.equal(winningOutcome);
     });
 
-    it("Should fail if non-creator tries to resolve event", async function () {
+    it("Should fail if non-oracle tries to resolve event", async function () {
       await expect(
         winCoins.connect(addr1).resolveEvent(eventId, 0)
-      ).to.be.revertedWith("Only event creator can call this");
+      ).to.be.revertedWith("Only event oracle can call this");
     });
 
     it("Should fail to resolve already resolved event", async function () {
-      await winCoins.resolveEvent(eventId, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId, 0);
 
       await expect(
-        winCoins.resolveEvent(eventId, 1)
+        winCoins.connect(oracle).resolveEvent(eventId, 1)
       ).to.be.revertedWith("Event already resolved");
     });
 
     it("Should fail to resolve with invalid outcome", async function () {
       await expect(
-        winCoins.resolveEvent(eventId, 999)
+        winCoins.connect(oracle).resolveEvent(eventId, 999)
       ).to.be.revertedWith("Invalid winning outcome");
     });
   });
@@ -206,7 +211,7 @@ describe("WinCoins", function () {
       const outcomes = ["Team A wins", "Team B wins", "Draw"];
       const predictionDuration = 3600;
 
-      const tx = await winCoins.createEvent("Football Match", outcomes, predictionDuration);
+      const tx = await winCoins.createEvent("Football Match", outcomes, predictionDuration, oracle.address);
       const receipt = await tx.wait();
       eventId = receipt.events[0].args.eventId;
     });
@@ -228,7 +233,7 @@ describe("WinCoins", function () {
       // Advance time and resolve.
       await ethers.provider.send("evm_increaseTime", [3601]);
       await ethers.provider.send("evm_mine");
-      await winCoins.resolveEvent(eventId, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId, 0);
 
       // Check potential payouts.
       const payout1 = await winCoins.calculatePotentialPayout(eventId, 0, addr1.address);
@@ -286,7 +291,7 @@ describe("WinCoins", function () {
 
       await ethers.provider.send("evm_increaseTime", [3601]);
       await ethers.provider.send("evm_mine");
-      await winCoins.resolveEvent(eventId, 1); // addr1 prediction on outcome 0, but outcome 1 won.
+      await winCoins.connect(oracle).resolveEvent(eventId, 1); // addr1 prediction on outcome 0, but outcome 1 won.
 
       await expect(
         winCoins.connect(addr1).claimPayout(eventId)
@@ -298,7 +303,7 @@ describe("WinCoins", function () {
 
       await ethers.provider.send("evm_increaseTime", [3601]);
       await ethers.provider.send("evm_mine");
-      await winCoins.resolveEvent(eventId, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId, 0);
 
       await winCoins.connect(addr1).claimPayout(eventId);
 
@@ -315,7 +320,7 @@ describe("WinCoins", function () {
       const outcomes = ["Team A wins", "Team B wins"];
       const predictionDuration = 3600;
 
-      const tx = await winCoins.createEvent("Test Event", outcomes, predictionDuration);
+      const tx = await winCoins.createEvent("Test Event", outcomes, predictionDuration, oracle.address);
       const receipt = await tx.wait();
       eventId = receipt.events[0].args.eventId;
 
@@ -336,7 +341,7 @@ describe("WinCoins", function () {
       const expectedPlatformFee = totalFee.div(2); // 50% to platform = 0.002 ETH
       const expectedCreatorFee = totalFee.sub(expectedPlatformFee); // 50% to creator = 0.002 ETH
 
-      const tx = await winCoins.resolveEvent(eventId, 0);
+      const tx = await winCoins.connect(oracle).resolveEvent(eventId, 0);
       const receipt = await tx.wait();
 
       // Check for PlatformFeeCollected event
@@ -360,7 +365,7 @@ describe("WinCoins", function () {
     });
 
     it("Should allow owner to withdraw platform fees", async function () {
-      await winCoins.resolveEvent(eventId, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId, 0);
 
       const platformFeeBalance = await winCoins.getPlatformFeeBalance();
       const ownerBalanceBefore = await owner.getBalance();
@@ -385,7 +390,7 @@ describe("WinCoins", function () {
     });
 
     it("Should fail to withdraw platform fees if not owner", async function () {
-      await winCoins.resolveEvent(eventId, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId, 0);
 
       await expect(
         winCoins.connect(addr1).withdrawPlatformFees()
@@ -400,19 +405,19 @@ describe("WinCoins", function () {
 
     it("Should accumulate platform fees from multiple events", async function () {
       // Resolve first event - first event has 4 ETH winnings (10-6), so fee = 0.004 ETH
-      await winCoins.resolveEvent(eventId, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId, 0);
       const firstFee = await winCoins.getPlatformFeeBalance();
 
       // Create and resolve second event
       const outcomes2 = ["Option A", "Option B"];
-      const tx2 = await winCoins.createEvent("Second Event", outcomes2, 3600);
+      const tx2 = await winCoins.createEvent("Second Event", outcomes2, 3600, oracle.address);
       const receipt2 = await tx2.wait();
       const eventId2 = receipt2.events[0].args.eventId;
 
       await winCoins.connect(addr1).makePrediction(eventId2, 0, { value: ethers.utils.parseEther("5.0") });
       await ethers.provider.send("evm_increaseTime", [3601]);
       await ethers.provider.send("evm_mine");
-      await winCoins.resolveEvent(eventId2, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId2, 0);
 
       const totalFee = await winCoins.getPlatformFeeBalance();
 
@@ -422,7 +427,7 @@ describe("WinCoins", function () {
     });
 
     it("Should allow event creator to withdraw creator fees", async function () {
-      await winCoins.resolveEvent(eventId, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId, 0);
 
       const creatorFeeBalance = await winCoins.getCreatorFeeBalance(owner.address);
       const creatorBalanceBefore = await owner.getBalance();
@@ -455,7 +460,7 @@ describe("WinCoins", function () {
     it("Should allow any creator to withdraw their own fees", async function () {
       // addr1 creates an event
       const outcomes = ["Option X", "Option Y"];
-      const tx = await winCoins.connect(addr1).createEvent("Creator Test", outcomes, 3600);
+      const tx = await winCoins.connect(addr1).createEvent("Creator Test", outcomes, 3600, oracle.address);
       const receipt = await tx.wait();
       const newEventId = receipt.events[0].args.eventId;
 
@@ -466,7 +471,7 @@ describe("WinCoins", function () {
       // Resolve event (addr1 is creator)
       await ethers.provider.send("evm_increaseTime", [3601]);
       await ethers.provider.send("evm_mine");
-      await winCoins.connect(addr1).resolveEvent(newEventId, 0);
+      await winCoins.connect(oracle).resolveEvent(newEventId, 0);
 
       // Check that addr1 has creator fees
       const addr1CreatorFees = await winCoins.getCreatorFeeBalance(addr1.address);
@@ -483,12 +488,12 @@ describe("WinCoins", function () {
 
     it("Should accumulate creator fees from multiple events for same creator", async function () {
       // Resolve first event
-      await winCoins.resolveEvent(eventId, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId, 0);
       const firstCreatorFee = await winCoins.getCreatorFeeBalance(owner.address);
 
       // Create and resolve second event by same creator
       const outcomes2 = ["Choice A", "Choice B"];
-      const tx2 = await winCoins.createEvent("Second Event", outcomes2, 3600);
+      const tx2 = await winCoins.createEvent("Second Event", outcomes2, 3600, oracle.address);
       const receipt2 = await tx2.wait();
       const eventId2 = receipt2.events[0].args.eventId;
 
@@ -496,7 +501,7 @@ describe("WinCoins", function () {
       await winCoins.connect(addr2).makePrediction(eventId2, 1, { value: ethers.utils.parseEther("8.0") });
       await ethers.provider.send("evm_increaseTime", [3601]);
       await ethers.provider.send("evm_mine");
-      await winCoins.resolveEvent(eventId2, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId2, 0);
 
       const totalCreatorFees = await winCoins.getCreatorFeeBalance(owner.address);
 
@@ -514,7 +519,7 @@ describe("WinCoins", function () {
       expect(await winCoins.owner()).to.equal(addr1.address);
 
       // Resolve event to generate fees
-      await winCoins.resolveEvent(eventId, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId, 0);
 
       // addr1 should now be able to withdraw platform fees
       await expect(
@@ -540,7 +545,7 @@ describe("WinCoins", function () {
       const outcomes = ["Team A wins", "Team B wins"];
       const predictionDuration = 3600;
 
-      const tx = await winCoins.createEvent("Test Event", outcomes, predictionDuration);
+      const tx = await winCoins.createEvent("Test Event", outcomes, predictionDuration, oracle.address);
       const receipt = await tx.wait();
       eventId = receipt.events[0].args.eventId;
 
@@ -552,7 +557,7 @@ describe("WinCoins", function () {
       // Advance time and resolve
       await ethers.provider.send("evm_increaseTime", [3601]);
       await ethers.provider.send("evm_mine");
-      await winCoins.resolveEvent(eventId, 0); // Team A wins
+      await winCoins.connect(oracle).resolveEvent(eventId, 0); // Team A wins
     });
 
     it("Should track resolution timestamp when event is resolved", async function () {
@@ -663,7 +668,7 @@ describe("WinCoins", function () {
     it("Should handle case where nobody won (collect entire pool)", async function () {
       // Create new event where winning outcome has no predictions
       const outcomes2 = ["Option A", "Option B", "Option C"];
-      const tx2 = await winCoins.createEvent("No Winner Event", outcomes2, 3600);
+      const tx2 = await winCoins.createEvent("No Winner Event", outcomes2, 3600, oracle.address);
       const receipt2 = await tx2.wait();
       const eventId2 = receipt2.events[0].args.eventId;
 
@@ -674,7 +679,7 @@ describe("WinCoins", function () {
       // Resolve with Option C winning (no one predicted this)
       await ethers.provider.send("evm_increaseTime", [3601]);
       await ethers.provider.send("evm_mine");
-      await winCoins.resolveEvent(eventId2, 2);
+      await winCoins.connect(oracle).resolveEvent(eventId2, 2);
 
       // Fast forward 10 years
       await ethers.provider.send("evm_increaseTime", [315360001]);
@@ -730,7 +735,7 @@ describe("WinCoins", function () {
       const outcomes = ["Team A wins", "Team B wins"];
       const predictionDuration = 3600;
 
-      const tx = await winCoins.createEvent("Test Event", outcomes, predictionDuration);
+      const tx = await winCoins.createEvent("Test Event", outcomes, predictionDuration, oracle.address);
       const receipt = await tx.wait();
       eventId = receipt.events[0].args.eventId;
 
@@ -782,7 +787,7 @@ describe("WinCoins", function () {
       const outcomes = ["Team A wins", "Team B wins"];
       const predictionDuration = 3600; // 1 hour.
 
-      await winCoins.createEvent("Football Match", outcomes, predictionDuration);
+      await winCoins.createEvent("Football Match", outcomes, predictionDuration, oracle.address);
       eventId = 0;
 
       // Add some predictions
@@ -814,7 +819,7 @@ describe("WinCoins", function () {
       await ethers.provider.send("evm_mine");
 
       // Resolve the event
-      await winCoins.resolveEvent(eventId, 0);
+      await winCoins.connect(oracle).resolveEvent(eventId, 0);
 
       await expect(
         winCoins.cancelEvent(eventId)
@@ -845,7 +850,7 @@ describe("WinCoins", function () {
       await ethers.provider.send("evm_mine");
 
       await expect(
-        winCoins.resolveEvent(eventId, 0)
+        winCoins.connect(oracle).resolveEvent(eventId, 0)
       ).to.be.revertedWith("Event has been cancelled");
     });
 
@@ -925,6 +930,92 @@ describe("WinCoins", function () {
       await expect(
         winCoins.connect(addr3).claimPayout(eventId)
       ).to.be.revertedWith("No refund available");
+    });
+  });
+
+  describe("Oracle Management", function () {
+    it("Should allow owner to register oracle", async function () {
+      const oracleName = "chess-oracle";
+      const oracleAddr = addr2.address;
+
+      await winCoins.registerOracle(oracleName, oracleAddr);
+
+      expect(await winCoins.isAuthorizedOracle(oracleAddr)).to.equal(true);
+      expect(await winCoins.getOracleAddress(oracleName)).to.equal(oracleAddr);
+    });
+
+    it("Should fail to register oracle if not owner", async function () {
+      await expect(
+        winCoins.connect(addr1).registerOracle("test", addr2.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("Should fail to register oracle with zero address", async function () {
+      await expect(
+        winCoins.registerOracle("test", ethers.constants.AddressZero)
+      ).to.be.revertedWith("Oracle address cannot be zero");
+    });
+
+    it("Should fail to register already registered oracle", async function () {
+      await winCoins.registerOracle("test", addr2.address);
+      
+      await expect(
+        winCoins.registerOracle("test2", addr2.address)
+      ).to.be.revertedWith("Oracle already registered");
+    });
+
+    it("Should fail to register duplicate oracle name", async function () {
+      await winCoins.registerOracle("test", addr2.address);
+      
+      await expect(
+        winCoins.registerOracle("test", addr3.address)
+      ).to.be.revertedWith("Oracle name already taken");
+    });
+
+    it("Should allow owner to deregister oracle", async function () {
+      const oracleName = "test-oracle-2";
+      await winCoins.registerOracle(oracleName, addr2.address);
+
+      await winCoins.deregisterOracle(oracleName);
+
+      expect(await winCoins.isAuthorizedOracle(addr2.address)).to.equal(false);
+      expect(await winCoins.getOracleAddress(oracleName)).to.equal(ethers.constants.AddressZero);
+    });
+
+    it("Should fail to deregister non-existent oracle", async function () {
+      await expect(
+        winCoins.deregisterOracle("non-existent")
+      ).to.be.revertedWith("Oracle name not found");
+    });
+
+    it("Should fail to create event with unauthorized oracle", async function () {
+      const outcomes = ["Option A", "Option B"];
+      
+      await expect(
+        winCoins.createEvent("Test", outcomes, 3600, addr3.address)
+      ).to.be.revertedWith("Oracle must be authorized");
+    });
+
+    it("Should allow oracle to create events for itself", async function () {
+      await winCoins.registerOracle("self-oracle", addr2.address);
+      
+      const outcomes = ["Option A", "Option B"];
+      const tx = await winCoins.connect(addr2).createEventByOracle("Self Event", outcomes, 3600);
+      const receipt = await tx.wait();
+      
+      const eventId = receipt.events[0].args.eventId;
+      const eventDetails = await winCoins.getEventDetails(eventId);
+      
+      expect(eventDetails.creator).to.equal(addr2.address);
+      expect(eventDetails.oracle).to.equal(addr2.address);
+    });
+
+    it("Should fail if unauthorized address tries to create event by oracle", async function () {
+      const outcomes = ["Option A", "Option B"];
+      
+      await expect(
+        winCoins.connect(addr3).createEventByOracle("Test", outcomes, 3600)
+      ).to.be.revertedWith("Only authorized oracles can call this");
     });
   });
 });
