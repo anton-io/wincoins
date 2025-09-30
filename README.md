@@ -151,6 +151,8 @@ npm run test
    npm run deploy:localhost
    ```
 
+   The contract address will be automatically saved to `.contract-address` file in the project root.
+
 ### Mainnet/Testnet Deployment
 
 1. **Configure your network in `hardhat.config.js`**
@@ -159,6 +161,15 @@ npm run test
    ```bash
    npm run deploy -- --network <network-name>
    ```
+
+   The contract address will be automatically saved to `.contract-address` file.
+
+### Contract Address Management
+
+After deployment, the contract address is:
+- Saved to `.contract-address` file (gitignored).
+- Automatically loaded by the frontend for localhost network.
+- Can be manually set via the UI modal when switching to localhost network.
 
 ## Usage Example
 
