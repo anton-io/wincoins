@@ -240,14 +240,68 @@ class WinCoinsContract {
         }
     }
 
+    async queryFilterInBatches(filter, batchSize = 1000) {
+        try {
+            const currentBlock = await this.provider.getBlockNumber();
+            const allEvents = [];
+
+            // Get deployment block from network config
+            let fromBlock = 0;
+            try {
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                const network = NetworkUtils.getNetworkByChainId(chainId);
+                if (network && network.deploymentBlock !== null && network.deploymentBlock !== undefined) {
+                    fromBlock = network.deploymentBlock;
+                } else {
+                    // Fallback: start from 100k blocks ago to avoid scanning entire chain
+                    fromBlock = Math.max(0, currentBlock - 100000);
+                }
+            } catch (error) {
+                console.warn('Could not get deployment block, using fallback', error);
+                fromBlock = Math.max(0, currentBlock - 100000);
+            }
+
+            // Query in batches
+            while (fromBlock <= currentBlock) {
+                const toBlock = Math.min(fromBlock + batchSize - 1, currentBlock);
+
+                try {
+                    const events = await this.contract.queryFilter(filter, fromBlock, toBlock);
+                    allEvents.push(...events);
+                } catch (error) {
+                    console.warn(`Failed to query blocks ${fromBlock}-${toBlock}, trying smaller batch`, error);
+                    // If batch fails, try with smaller batch size
+                    if (batchSize > 100) {
+                        const smallerBatch = await this.queryFilterInBatches(filter, Math.floor(batchSize / 2));
+                        return smallerBatch;
+                    }
+                    throw error;
+                }
+
+                fromBlock = toBlock + 1;
+            }
+
+            return allEvents;
+        } catch (error) {
+            console.error('Failed to query events in batches:', error);
+            // Fallback to querying without block range (may fail on some networks)
+            try {
+                return await this.contract.queryFilter(filter);
+            } catch (fallbackError) {
+                console.error('Fallback query also failed:', fallbackError);
+                return [];
+            }
+        }
+    }
+
     async getUserPredictionsForAllEvents() {
         try {
             const events = await this.getAllEvents();
             const userPredictions = [];
 
-            // Get PayoutClaimed events for this user.
+            // Get PayoutClaimed events for this user in batches to avoid block range limits
             const payoutFilter = this.contract.filters.PayoutClaimed(null, this.userAddress);
-            const payoutEvents = await this.contract.queryFilter(payoutFilter);
+            const payoutEvents = await this.queryFilterInBatches(payoutFilter);
 
             for (const event of events) {
                 // Check if user claimed refund for cancelled event
