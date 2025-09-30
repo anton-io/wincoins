@@ -266,6 +266,12 @@ class WinCoinsApp {
             const success = await NetworkUtils.switchNetwork(networkName);
 
             if (success) {
+                // Check if localhost network and no contract address set
+                if (networkName === 'localhost' && !NETWORKS[networkName].contractAddress) {
+                    await this.promptForContractAddress();
+                    return;
+                }
+
                 this.showNotification(`Successfully switched to ${NETWORKS[networkName]?.chainName || networkName}`, 'success');
                 this.closeNetworkDropdown();
 
@@ -280,6 +286,58 @@ class WinCoinsApp {
             console.error('Network switch error:', error);
             this.showNotification('Failed to switch network. Please try again.', 'error');
         }
+    }
+
+    async promptForContractAddress() {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('contractAddressModal');
+            const input = document.getElementById('contractAddressInput');
+            const okBtn = document.getElementById('contractAddressOk');
+            const cancelBtn = document.getElementById('contractAddressCancel');
+
+            // Show modal
+            modal.classList.remove('hidden');
+            input.value = '';
+            input.focus();
+
+            const handleOk = () => {
+                const address = input.value.trim();
+                if (address && address.startsWith('0x') && address.length === 42) {
+                    // Set the address in networks and localStorage
+                    NetworkUtils.setContractAddress('localhost', address);
+                    localStorage.setItem('wincoins_contract_address', address);
+                    winCoinsContract.contractAddress = address;
+
+                    modal.classList.add('hidden');
+                    this.showNotification('Contract address set successfully', 'success');
+                    this.closeNetworkDropdown();
+
+                    // Reconnect if wallet is connected
+                    if (this.isConnected) {
+                        this.reconnectToNetwork();
+                    }
+
+                    cleanup();
+                    resolve(true);
+                } else {
+                    this.showNotification('Please enter a valid contract address', 'error');
+                }
+            };
+
+            const handleCancel = () => {
+                modal.classList.add('hidden');
+                cleanup();
+                resolve(false);
+            };
+
+            const cleanup = () => {
+                okBtn.removeEventListener('click', handleOk);
+                cancelBtn.removeEventListener('click', handleCancel);
+            };
+
+            okBtn.addEventListener('click', handleOk);
+            cancelBtn.addEventListener('click', handleCancel);
+        });
     }
 
     async reconnectToNetwork() {

@@ -1,4 +1,6 @@
 const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
   console.log("Deploying WinCoins contract...");
@@ -19,6 +21,11 @@ async function main() {
   console.log("Waiting for deployment to be mined...");
   await winCoins.deployTransaction.wait();
   console.log("Contract deployment confirmed!");
+
+  // Write contract address to .contract-address file
+  const contractAddressPath = path.join(__dirname, "../.contract-address");
+  fs.writeFileSync(contractAddressPath, winCoins.address);
+  console.log("Contract address saved to .contract-address");
 
   return winCoins.address;
 }

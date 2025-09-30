@@ -1,0 +1,7 @@
+#!/bin/bash
+
+npm run node &
+sleep 3
+npm run deploy:localhost &
+npm run serve &
+echo "Contract address: $(cat .contract-address)"
