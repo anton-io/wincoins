@@ -130,9 +130,9 @@ class WinCoinsBettingWidget {
       
       <div class="bet-controls">
         <div class="bet-amounts">
-          <button class="bet-btn" data-amount="0.01">0.01 ETH</button>
-          <button class="bet-btn" data-amount="0.05">0.05 ETH</button>
-          <button class="bet-btn" data-amount="0.1">0.1 ETH</button>
+          <button class="bet-btn" data-amount="0.01">0.01 CELO</button>
+          <button class="bet-btn" data-amount="0.05">0.05 CELO</button>
+          <button class="bet-btn" data-amount="0.1">0.1 CELO</button>
         </div>
         <div class="selected-outcome" id="selected-outcome">Select an outcome</div>
         <button class="place-bet-btn" id="place-bet" disabled>Place Bet</button>
@@ -235,7 +235,7 @@ class WinCoinsBettingWidget {
     const btn = this.widget.querySelector("#place-bet");
     if (outcome !== null && amount) {
       btn.disabled = false;
-      btn.textContent = `Bet ${amount} ETH`;
+      btn.textContent = `Bet ${amount} CELO`;
     } else {
       btn.disabled = true;
       btn.textContent = "Place Bet";
@@ -273,8 +273,8 @@ class WinCoinsBettingWidget {
       // Show confirmation
       this.showBetConfirmation(betResult.txHash);
 
-      // Hide widget after successful bet
-      setTimeout(() => this.hideWidget(), 2000);
+      // Don't auto-hide widget after successful bet
+      // User can manually close it if they want
 
     } catch (error) {
       console.error("❌ Error placing bet:", error);

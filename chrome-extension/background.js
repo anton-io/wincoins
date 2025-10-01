@@ -7,10 +7,32 @@ class WinCoinsListener {
     this.contract = null;
     this.isConnected = false;
     this.activeEvents = new Map();
+    this.lastCheckedBlock = null;
+    this.pollingInterval = null;
     
-    // Contract config - will be loaded from storage
+    // Network configurations
+    this.networks = {
+      localhost: {
+        rpc: 'http://localhost:8545',
+        contract: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+        name: 'Localhost (Hardhat)'
+      },
+      moonbaseAlpha: {
+        rpc: 'https://rpc.api.moonbase.moonbeam.network',
+        contract: '0x6aE9A2b23BCd94876F555532AfD259CeA97e44a3',
+        name: 'Moonbase Alpha'
+      },
+      celo: {
+        rpc: 'https://forno.celo.org',
+        contract: '0x3a7F8a6a5a6E0E5961CFe699af5C13d608440939', 
+        name: 'Celo Mainnet'
+      }
+    };
+    
+    // Current network config - will be loaded from storage
+    this.currentNetwork = 'celo';
     this.CONTRACT_ADDRESS = null;
-    this.RPC_URL = 'ws://localhost:8545'; // Hardhat node WebSocket
+    this.RPC_URL = null;
     
     this.CONTRACT_ABI = [
       "function createEvent(string memory name, string[] memory outcomes, uint256 predictionDuration, address oracle) external returns (uint256)",
@@ -35,48 +57,84 @@ class WinCoinsListener {
 
   async init() {
     try {
-      await this.loadContractAddress();
-      if (this.CONTRACT_ADDRESS) {
+      await this.loadNetworkSettings();
+      if (this.CONTRACT_ADDRESS && this.RPC_URL) {
         await this.connect();
-        this.setupEventListeners();
-        console.log('WinCoins listener initialized with contract:', this.CONTRACT_ADDRESS);
+        console.log('WinCoins listener initialized:', {
+          network: this.currentNetwork,
+          contract: this.CONTRACT_ADDRESS,
+          rpc: this.RPC_URL
+        });
       } else {
-        console.log('No contract address configured. Please set one in the extension popup.');
+        console.log('No network configuration. Please configure in the extension popup.');
       }
     } catch (error) {
       console.error('Failed to initialize WinCoins listener:', error);
     }
   }
 
-  async loadContractAddress() {
+  async loadNetworkSettings() {
     try {
-      const result = await chrome.storage.sync.get(['contractAddress']);
-      if (result.contractAddress) {
-        this.CONTRACT_ADDRESS = result.contractAddress;
+      const result = await chrome.storage.sync.get(['selectedNetwork', 'contractAddress']);
+      
+      // Load selected network or default to celo mainnet
+      this.currentNetwork = result.selectedNetwork || 'celo';
+      
+      // Get network configuration
+      const networkConfig = this.networks[this.currentNetwork];
+      if (networkConfig) {
+        this.RPC_URL = networkConfig.rpc;
+        this.CONTRACT_ADDRESS = networkConfig.contract;
       } else {
-        // Fallback to default for first-time users
-        this.CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-        // Save the default
-        await chrome.storage.sync.set({ contractAddress: this.CONTRACT_ADDRESS });
+        console.error('Unknown network:', this.currentNetwork);
+        // Fallback to celo mainnet
+        this.currentNetwork = 'celo';
+        this.RPC_URL = this.networks.celo.rpc;
+        this.CONTRACT_ADDRESS = this.networks.celo.contract;
       }
+      
+      // Save current settings
+      await chrome.storage.sync.set({ 
+        selectedNetwork: this.currentNetwork,
+        contractAddress: this.CONTRACT_ADDRESS 
+      });
+      
     } catch (error) {
-      console.error('Error loading contract address:', error);
-      // Use hardcoded fallback
-      this.CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+      console.error('Error loading network settings:', error);
+      // Use celo mainnet fallback
+      this.currentNetwork = 'celo';
+      this.RPC_URL = this.networks.celo.rpc;
+      this.CONTRACT_ADDRESS = this.networks.celo.contract;
     }
   }
 
   async connect() {
-    this.provider = new ethers.providers.WebSocketProvider(this.RPC_URL);
-    this.contract = new ethers.Contract(this.CONTRACT_ADDRESS, this.CONTRACT_ABI, this.provider);
-    this.isConnected = true;
+    try {
+      console.log('🔌 Connecting to:', this.RPC_URL);
+      this.provider = new ethers.providers.JsonRpcProvider(this.RPC_URL);
+      
+      this.contract = new ethers.Contract(this.CONTRACT_ADDRESS, this.CONTRACT_ABI, this.provider);
+      this.isConnected = true;
+      
+      // Test the connection
+      const network = await this.provider.getNetwork();
+      console.log('🌐 Connected to network:', network);
+      
+      // Since we can't use WebSocket events, we'll poll for new events
+      this.startEventPolling();
+      
+    } catch (error) {
+      console.error('❌ Failed to connect:', error);
+      throw error;
+    }
   }
 
   async updateContractAddress(newAddress) {
     console.log('Updating contract address to:', newAddress);
     this.CONTRACT_ADDRESS = newAddress;
     
-    // Disconnect existing connection
+    // Stop polling and disconnect existing connection
+    this.stopEventPolling();
     if (this.provider) {
       this.provider.removeAllListeners();
     }
@@ -86,47 +144,141 @@ class WinCoinsListener {
     
     // Reconnect with new address
     await this.connect();
-    this.setupEventListeners();
     
     console.log('Contract address updated and reconnected');
   }
 
-  setupEventListeners() {
-    // Listen for new events created
-    this.contract.on("EventCreated", async (eventId, creator, name, outcomes, predictionDeadline) => {
-      console.log('New event created:', { eventId: eventId.toString(), name, outcomes });
-      
-      const eventData = {
-        eventId: eventId.toString(),
-        name,
-        outcomes,
-        predictionDeadline: predictionDeadline.toString(),
-        creator,
-        pools: new Array(outcomes.length).fill('0'),
-        totalPool: '0'
-      };
-      
-      // Store active event
-      this.activeEvents.set(eventId.toString(), eventData);
-      
-      // Broadcast to all tabs
-      await this.broadcastToAllTabs({
-        type: 'NEW_EVENT',
-        data: eventData
-      });
+  async switchNetwork(networkName) {
+    console.log('Switching network to:', networkName);
+    
+    const networkConfig = this.networks[networkName];
+    if (!networkConfig) {
+      throw new Error(`Unknown network: ${networkName}`);
+    }
+    
+    // Update current network settings
+    this.currentNetwork = networkName;
+    this.RPC_URL = networkConfig.rpc;
+    this.CONTRACT_ADDRESS = networkConfig.contract;
+    
+    // Stop polling and disconnect existing connection
+    this.stopEventPolling();
+    if (this.provider) {
+      this.provider.removeAllListeners();
+    }
+    
+    // Clear active events
+    this.activeEvents.clear();
+    
+    // Reconnect with new network
+    await this.connect();
+    
+    console.log('Network switched successfully:', {
+      network: this.currentNetwork,
+      contract: this.CONTRACT_ADDRESS,
+      rpc: this.RPC_URL
     });
+  }
 
-    // Listen for prediction/bet placed
-    this.contract.on("PredictionPlaced", async (eventId, predictor, outcomeIndex, amount) => {
-      console.log('Prediction placed:', { 
-        eventId: eventId.toString(), 
-        outcomeIndex: outcomeIndex.toString(), 
-        amount: ethers.utils.formatEther(amount) 
-      });
+  startEventPolling() {
+    console.log('🔄 Starting event polling...');
+    
+    // Stop any existing polling
+    this.stopEventPolling();
+    
+    // Poll for events every 10 seconds
+    this.pollingInterval = setInterval(async () => {
+      try {
+        await this.pollForNewEvents();
+      } catch (error) {
+        console.error('❌ Error polling for events:', error);
+      }
+    }, 10000);
+    
+    // Also poll immediately
+    this.pollForNewEvents();
+  }
+  
+  stopEventPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+      console.log('⏹️ Stopped event polling');
+    }
+  }
+  
+  async pollForNewEvents() {
+    try {
+      if (!this.contract || !this.isConnected) return;
       
-      // Update pools for this event
-      await this.updateEventPools(eventId.toString());
+      const currentBlock = await this.provider.getBlockNumber();
+      
+      // If this is the first time, start from 100 blocks ago
+      if (!this.lastCheckedBlock) {
+        this.lastCheckedBlock = Math.max(0, currentBlock - 100);
+      }
+      
+      // Get EventCreated events since last check
+      const eventFilter = this.contract.filters.EventCreated();
+      const events = await this.contract.queryFilter(eventFilter, this.lastCheckedBlock + 1, currentBlock);
+      
+      console.log(`📊 Checked blocks ${this.lastCheckedBlock + 1} to ${currentBlock}, found ${events.length} events`);
+      
+      for (const event of events) {
+        await this.handleEventCreated(event);
+      }
+      
+      // Get PredictionPlaced events since last check
+      const predictionFilter = this.contract.filters.PredictionPlaced();
+      const predictions = await this.contract.queryFilter(predictionFilter, this.lastCheckedBlock + 1, currentBlock);
+      
+      for (const prediction of predictions) {
+        await this.handlePredictionPlaced(prediction);
+      }
+      
+      this.lastCheckedBlock = currentBlock;
+      
+    } catch (error) {
+      console.error('❌ Error in pollForNewEvents:', error);
+    }
+  }
+  
+  async handleEventCreated(event) {
+    const [eventId, creator, name, outcomes, predictionDeadline] = event.args;
+    
+    console.log('New event created:', { eventId: eventId.toString(), name, outcomes });
+    
+    const eventData = {
+      eventId: eventId.toString(),
+      name,
+      outcomes,
+      predictionDeadline: predictionDeadline.toString(),
+      creator,
+      pools: new Array(outcomes.length).fill('0'),
+      totalPool: '0'
+    };
+    
+    // Store active event
+    this.activeEvents.set(eventId.toString(), eventData);
+    
+    // Broadcast to all tabs
+    await this.broadcastToAllTabs({
+      type: 'NEW_EVENT',
+      data: eventData
     });
+  }
+  
+  async handlePredictionPlaced(event) {
+    const [eventId, predictor, outcomeIndex, amount] = event.args;
+    
+    console.log('Prediction placed:', { 
+      eventId: eventId.toString(), 
+      outcomeIndex: outcomeIndex.toString(), 
+      amount: ethers.utils.formatEther(amount) 
+    });
+    
+    // Update pools for this event
+    await this.updateEventPools(eventId.toString());
   }
 
   async updateEventPools(eventId) {
@@ -236,6 +388,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true });
       } catch (error) {
         console.error('Error updating contract address:', error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Keep message channel open for async response
+  }
+  
+  if (message.type === 'NETWORK_CHANGED') {
+    (async () => {
+      try {
+        await winCoinsListener.switchNetwork(message.network);
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error('Error switching network:', error);
         sendResponse({ success: false, error: error.message });
       }
     })();

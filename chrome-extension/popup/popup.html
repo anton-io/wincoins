@@ -128,7 +128,11 @@
     
     <div class="setting-item">
       <div class="setting-label">Network</div>
-      <input type="text" class="setting-input" value="Localhost (Hardhat)" readonly>
+      <select class="setting-input" id="network-selector">
+        <option value="celo">Celo Mainnet</option>
+        <option value="moonbaseAlpha">Moonbase Alpha</option>
+        <option value="localhost">Localhost (Hardhat)</option>
+      </select>
     </div>
     
     <button class="btn" id="refresh-btn">Refresh Status</button>
