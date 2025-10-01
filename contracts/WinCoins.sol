@@ -1,6 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+/*
+ * ██╗    ██╗██╗███╗   ██╗ ██████╗ ██████╗ ██╗███╗   ██╗███████╗
+ * ██║    ██║██║████╗  ██║██╔════╝██╔═══██╗██║████╗  ██║██╔════╝
+ * ██║ █╗ ██║██║██╔██╗ ██║██║     ██║   ██║██║██╔██╗ ██║███████╗
+ * ██║███╗██║██║██║╚██╗██║██║     ██║   ██║██║██║╚██╗██║╚════██║
+ * ╚███╔███╔╝██║██║ ╚████║╚██████╗╚██████╔╝██║██║ ╚████║███████║
+ *  ╚══╝╚══╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚══════╝
+ *
+ * See it. Predict it. WinCoins.
+ */
+
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -241,13 +252,13 @@ contract WinCoins is ReentrancyGuard, Ownable {
     {
         Event storage eventData = events[eventId];
 
-        // Handle refunds for cancelled events
+        // Handle refunds for cancelled events.
         if (eventData.isCancelled) {
             _claimRefund(eventId, eventData);
             return;
         }
 
-        // Handle normal payouts for resolved events
+        // Handle normal payouts for resolved events.
         require(eventData.isResolved, "Event not resolved yet");
         _claimWinnings(eventId, eventData);
     }
@@ -269,7 +280,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
         require(totalRefund > 0, "No refund available");
         require(address(this).balance >= totalRefund, "Insufficient contract balance");
 
-        // Mark as claimed
+        // Mark as claimed.
         hasClaimed[msg.sender][eventId] = true;
         claimedAmount[msg.sender][eventId] = totalRefund;
 
@@ -442,7 +453,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
         uint256 winningOutcome = eventData.winningOutcome;
         uint256 totalPoolAmount = eventData.totalPoolAmount;
 
-        // If nobody won (no predictions on winning outcome), collect entire pool
+        // If nobody won (no predictions on winning outcome), collect entire pool.
         if (eventData.poolAmounts[winningOutcome] == 0) {
             require(totalPoolAmount > 0, "No unclaimed winnings available");
 
@@ -455,7 +466,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
             return;
         }
 
-        // Calculate unclaimed amount by checking remaining user predictions
+        // Calculate unclaimed amount by checking remaining user predictions.
         uint256 unclaimedAmount = 0;
         address[] memory participants = eventData.poolParticipants[winningOutcome];
 
@@ -463,13 +474,13 @@ contract WinCoins is ReentrancyGuard, Ownable {
             address participant = participants[i];
             uint256 userPrediction = eventData.userPredictions[winningOutcome][participant];
 
-            // If user still has prediction amount > 0, they haven't claimed
+            // If user still has prediction amount > 0, they haven't claimed.
             if (userPrediction > 0) {
                 // Calculate what they would be entitled to claim
                 uint256 userPayout = (userPrediction * totalPoolAmount) / eventData.poolAmounts[winningOutcome];
                 unclaimedAmount += userPayout;
 
-                // Clear their prediction so it can't be claimed later
+                // Clear their prediction so it can't be claimed later.
                 eventData.userPredictions[winningOutcome][participant] = 0;
             }
         }
@@ -510,12 +521,12 @@ contract WinCoins is ReentrancyGuard, Ownable {
         );
     }
 
-    // Get all event IDs that a user has participated in
+    // Get all event IDs that a user has participated in.
     function getUserEventIds(address user) external view returns (uint256[] memory) {
         return userEventIds[user];
     }
 
-    // Get user's prediction details for a specific event
+    // Get user's prediction details for a specific event.
     function getUserEventPredictions(address user, uint256 eventId)
         external
         view
@@ -528,7 +539,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
         Event storage eventData = events[eventId];
         uint256 outcomeCount = eventData.outcomes.length;
 
-        // First, count how many outcomes the user predicted on
+        // First, count how many outcomes the user predicted on.
         uint256 predictionCount = 0;
         for (uint256 i = 0; i < outcomeCount; i++) {
             if (eventData.userPredictions[i][user] > 0) {
@@ -536,7 +547,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
             }
         }
 
-        // Create arrays of the correct size
+        // Create arrays of the correct size.
         outcomeIndices = new uint256[](predictionCount);
         amounts = new uint256[](predictionCount);
 
@@ -553,7 +564,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
         return (outcomeIndices, amounts);
     }
 
-    // Get claim status and amount for a user and event
+    // Get claim status and amount for a user and event.
     function getUserClaimInfo(address user, uint256 eventId)
         external
         view

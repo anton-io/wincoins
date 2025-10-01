@@ -213,9 +213,9 @@ describe("WinCoins", function () {
 
     it("Should distribute payouts proportionally to winners", async function () {
       // Set up predictions:
-      // Outcome 0 (winning): addr1 = 1 ETH, addr2 = 2 ETH (total 3 ETH)
-      // Outcome 1 (losing): addr3 = 6 ETH
-      // Total pool: 9 ETH
+      // Outcome 0 (winning): addr1 = 1, addr2 = 2 (total 3).
+      // Outcome 1 (losing): addr3 = 6.
+      // Total pool: 9.
 
       const prediction1 = ethers.utils.parseEther("1.0");
       const prediction2 = ethers.utils.parseEther("2.0");
@@ -234,16 +234,16 @@ describe("WinCoins", function () {
       const payout1 = await winCoins.calculatePotentialPayout(eventId, 0, addr1.address);
       const payout2 = await winCoins.calculatePotentialPayout(eventId, 0, addr2.address);
 
-      // Total pool is 9 ETH. Platform fee is only on winnings (profit)
-      // Winners bet 3 ETH, losers bet 6 ETH, so winnings = 6 ETH
-      // Platform fee = 0.1% of 6 ETH = 0.006 ETH
+      // Total pool is 9. Platform fee is only on winnings (profit).
+      // Winners bet 3, losers bet 6, so winnings = 6
+      // Platform fee = 0.1% of 6 = 0.006.
       const totalPool = ethers.utils.parseEther("9.0");
-      const winnings = ethers.utils.parseEther("6.0"); // Losing bets
-      const platformFee = winnings.div(1000); // 0.1% of winnings only
+      const winnings = ethers.utils.parseEther("6.0"); // Losing bets.
+      const platformFee = winnings.div(1000);          // 0.1% of winnings only.
       const poolAfterFee = totalPool.sub(platformFee);
 
-      // addr1 should get 1/3 of pool after fee
-      // addr2 should get 2/3 of pool after fee
+      // addr1 should get 1/3 of pool after fee.
+      // addr2 should get 2/3 of pool after fee.
       expect(payout1).to.equal(poolAfterFee.div(3));
       expect(payout2).to.equal(poolAfterFee.mul(2).div(3));
 

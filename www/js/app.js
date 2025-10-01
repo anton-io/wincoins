@@ -11,7 +11,7 @@ class WinCoinsApp {
         this.initializeApp();
     }
 
-    // Get currency symbol from current network
+    // Get currency symbol from current network.
     async getCurrentCurrencySymbol() {
         if (window.ethereum) {
             try {
