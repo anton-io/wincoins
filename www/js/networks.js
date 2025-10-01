@@ -17,7 +17,7 @@ const NETWORKS = {
       "wss://celo.drpc.org",
     ],
     blockExplorerUrls: ["https://explorer.celo.org", "https://celoscan.io"],
-    contractAddress: "0x131B0A5622640A00052E14DBB92b2f0BA1037A80",
+    contractAddress: "0x3a7F8a6a5a6E0E5961CFe699af5C13d608440939",
     faucetUrl: null,
     testnet: false,
   },

@@ -132,6 +132,25 @@ class WinCoinsContract {
     );
   }
 
+  safeToNumber(bigNumberValue) {
+    // Handle BigNumber overflow by checking if it's within safe integer range
+    try {
+      // For very large numbers (like timestamps in microseconds), convert to seconds
+      if (bigNumberValue.gt(ethers.BigNumber.from(Number.MAX_SAFE_INTEGER))) {
+        // If it's a very large timestamp (likely in microseconds), convert to seconds
+        if (bigNumberValue.gt(ethers.BigNumber.from("1000000000000000"))) {
+          return parseInt(bigNumberValue.div(1000).toString());
+        }
+        // For other large numbers, just convert to string then parse
+        return parseInt(bigNumberValue.toString());
+      }
+      return bigNumberValue.toNumber();
+    } catch (error) {
+      console.warn('BigNumber conversion overflow, using string conversion:', bigNumberValue.toString());
+      return parseInt(bigNumberValue.toString());
+    }
+  }
+
   async getBalance() {
     if (this.userAddress) {
       const balance = await this.provider.getBalance(this.userAddress);
@@ -183,7 +202,7 @@ class WinCoinsContract {
         (e) => e.event === "EventCreated"
       );
       return eventCreatedEvent
-        ? eventCreatedEvent.args.eventId.toNumber()
+        ? this.safeToNumber(eventCreatedEvent.args.eventId)
         : null;
     } catch (error) {
       console.error("Failed to create event:", error);
@@ -273,12 +292,12 @@ class WinCoinsContract {
         outcomes: details[1],
         creator: details[2],
         oracle: details[3],
-        predictionDeadline: details[4].toNumber(),
+        predictionDeadline: this.safeToNumber(details[4]),
         isResolved: details[5],
         isCancelled: details[6],
-        winningOutcome: details[7].toNumber(),
+        winningOutcome: this.safeToNumber(details[7]),
         totalPoolAmount: ethers.utils.formatEther(details[8]),
-        resolvedTimestamp: details[9].toNumber(),
+        resolvedTimestamp: this.safeToNumber(details[9]),
         unclaimedWinningsCollected: details[10],
       };
       
@@ -341,7 +360,7 @@ class WinCoinsContract {
   async getNextEventId() {
     try {
       const nextId = await this.contract.nextEventId();
-      return nextId.toNumber();
+      return this.safeToNumber(nextId);
     } catch (error) {
       console.error("Failed to get next event ID:", error);
       return 0;
@@ -387,7 +406,7 @@ class WinCoinsContract {
 
       // Iterate only through events the user participated in
       for (const eventIdBN of userEventIds) {
-        const eventId = eventIdBN.toNumber();
+        const eventId = this.safeToNumber(eventIdBN);
         const event = await this.getEventDetails(eventId);
         if (!event) continue;
 
@@ -451,7 +470,7 @@ class WinCoinsContract {
         } else {
           // Handle normal resolved/unresolved events
           for (let i = 0; i < outcomeIndices.length; i++) {
-            const outcomeIndex = outcomeIndices[i].toNumber();
+            const outcomeIndex = this.safeToNumber(outcomeIndices[i]);
             const predictionAmount = ethers.utils.formatEther(amounts[i]);
 
             // Check if this is a winning outcome and user claimed it
