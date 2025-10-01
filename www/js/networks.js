@@ -26,7 +26,7 @@ const NETWORKS = {
     },
     // Celo Sepolia Testnet.
     celoSepolia: {
-        chainId: '0xb612', // 46610 in hex.
+        chainId: '0xaa044c', // 11142220 in hex.
         chainName: 'Celo Sepolia',
         nativeCurrency: {
             name: 'CELO',
@@ -34,6 +34,8 @@ const NETWORKS = {
             decimals: 18
         },
         rpcUrls: [
+            'https://forno.celo-sepolia.celo-testnet.org',
+            'https://rpc.ankr.com/celo_sepolia',
             'https://celo-sepolia.drpc.org',
             'wss://celo-sepolia.drpc.org'
         ],

@@ -41,6 +41,10 @@ class WinCoinsContract {
     }
 
     async initialize() {
+        // Always default to first network if no wallet detected
+        const firstNetwork = Object.values(NETWORKS)[0];
+        this.contractAddress = firstNetwork?.contractAddress || null;
+
         if (typeof window.ethereum !== 'undefined') {
             this.provider = new ethers.providers.Web3Provider(window.ethereum);
 
@@ -48,18 +52,21 @@ class WinCoinsContract {
             try {
                 const chainId = await window.ethereum.request({ method: 'eth_chainId' });
                 const network = NetworkUtils.getNetworkByChainId(chainId);
-                this.contractAddress = network?.contractAddress || null;
+                if (network?.contractAddress) {
+                    this.contractAddress = network.contractAddress;
+                }
             } catch (error) {
                 console.error('Failed to get current network:', error);
-                // Fallback to first network entry
-                const firstNetwork = Object.values(NETWORKS)[0];
-                this.contractAddress = firstNetwork?.contractAddress || null;
+                // Use first network as fallback (already set above)
             }
+        } else {
+            // No MetaMask, create a read-only provider for first network
+            this.provider = new ethers.providers.JsonRpcProvider(firstNetwork.rpcUrls[0]);
+        }
 
-            if (this.contractAddress) {
-                this.contract = new ethers.Contract(this.contractAddress, this.contractABI, this.provider);
-                return true;
-            }
+        if (this.contractAddress) {
+            this.contract = new ethers.Contract(this.contractAddress, this.contractABI, this.provider);
+            return true;
         }
         return false;
     }
