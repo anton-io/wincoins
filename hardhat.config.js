@@ -23,6 +23,11 @@ module.exports = {
       url: 'https://rpc.api.moonbase.moonbeam.network',
       chainId: 1287,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+    },
+    celoSepolia: {
+      url: 'https://forno.celo-sepolia.celo-testnet.org',
+      chainId: 11142220,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
     }
   },
   paths: {

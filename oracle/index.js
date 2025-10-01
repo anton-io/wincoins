@@ -5,20 +5,28 @@ require("dotenv").config();
 
 class WinCoinsOracle {
   constructor() {
-    this.provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
-    this.wallet = new ethers.Wallet(
-      process.env.ORACLE_PRIVATE_KEY,
-      this.provider
-    );
-
+    // Parse network configurations
+    this.networks = JSON.parse(process.env.NETWORKS || '{}');
+    this.contracts = {};
+    this.wallets = {};
+    
+    // Initialize connections for each network
     const contractABI = JSON.parse(
       fs.readFileSync("./WinCoins.json", "utf8")
     ).abi;
-    this.contract = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
-      contractABI,
-      this.wallet
-    );
+
+    for (const [networkName, config] of Object.entries(this.networks)) {
+      console.log(`🌐 Initializing ${config.name} (${networkName})`);
+      
+      const provider = new ethers.providers.JsonRpcProvider(config.rpc);
+      const wallet = new ethers.Wallet(process.env.ORACLE_PRIVATE_KEY, provider);
+      const contract = new ethers.Contract(config.contract, contractABI, wallet);
+      
+      this.wallets[networkName] = wallet;
+      this.contracts[networkName] = contract;
+      
+      console.log(`✅ ${config.name}: ${config.contract}`);
+    }
 
     this.pollInterval = parseInt(process.env.POLL_INTERVAL) || 30000;
     this.oracleName = process.env.ORACLE_NAME || "default-oracle";
@@ -37,12 +45,17 @@ class WinCoinsOracle {
 
   async init() {
     try {
-      console.log(`✅ Oracle ${this.wallet.address} is ready to resolve events`);
+      console.log(`✅ Oracle ${process.env.ORACLE_ADDRESS} is ready to resolve events across multiple networks`);
 
-      const network = await this.provider.getNetwork();
-      console.log(
-        `🌐 Connected to network: ${network.name} (chainId: ${network.chainId})`
-      );
+      for (const [networkName, config] of Object.entries(this.networks)) {
+        try {
+          const wallet = this.wallets[networkName];
+          const network = await wallet.provider.getNetwork();
+          console.log(`🌐 ${config.name}: Connected (chainId: ${network.chainId})`);
+        } catch (error) {
+          console.error(`❌ Failed to connect to ${config.name}:`, error.message);
+        }
+      }
     } catch (error) {
       console.error("❌ Initialization failed:", error.message);
       process.exit(1);
@@ -50,50 +63,63 @@ class WinCoinsOracle {
   }
 
   async getUnresolvedEvents() {
-    try {
-      const nextEventId = await this.contract.nextEventId();
-      const unresolvedEvents = [];
+    const allUnresolvedEvents = [];
 
-      for (let i = 0; i < nextEventId.toNumber(); i++) {
-        const eventDetails = await this.contract.getEventDetails(i);
-        const [
-          name,
-          outcomes,
-          creator,
-          oracle,
-          predictionDeadline,
-          isResolved,
-          isCancelled,
-        ] = eventDetails;
+    for (const [networkName, config] of Object.entries(this.networks)) {
+      try {
+        console.log(`🔍 Checking ${config.name} for unresolved events...`);
+        const contract = this.contracts[networkName];
+        const wallet = this.wallets[networkName];
+        
+        const nextEventId = await contract.nextEventId();
+        console.log(`📊 ${config.name} - Total events: ${nextEventId}`);
 
-        // Check if this oracle should handle this event and it's ready to resolve
-        if (
-          oracle === this.wallet.address &&
-          !isResolved &&
-          !isCancelled &&
-          Date.now() > predictionDeadline.toNumber() * 1000
-        ) {
-          unresolvedEvents.push({
-            id: i,
+        for (let i = 0; i < nextEventId.toNumber(); i++) {
+          const eventDetails = await contract.getEventDetails(i);
+          const [
             name,
             outcomes,
             creator,
-            predictionDeadline: new Date(predictionDeadline.toNumber() * 1000),
+            oracle,
+            predictionDeadline,
+            isResolved,
+            isCancelled,
+          ] = eventDetails;
+
+          // Check if this oracle should handle this event and it's ready to resolve
+          if (
+            oracle === wallet.address &&
+            !isResolved &&
+            !isCancelled &&
+            Date.now() > predictionDeadline.toNumber() * 1000
+          ) {
+            allUnresolvedEvents.push({
+              id: i,
+              name,
+              outcomes,
+              creator,
+              predictionDeadline: new Date(predictionDeadline.toNumber() * 1000),
+              networkName,
+              networkConfig: config,
           });
         }
       }
 
-      return unresolvedEvents;
-    } catch (error) {
-      console.error("❌ Error fetching unresolved events:", error.message);
-      return [];
+      } catch (error) {
+        console.error(`❌ Error checking ${config.name}:`, error.message);
+      }
     }
+
+    return allUnresolvedEvents;
   }
 
   async resolveEvent(eventId, eventData) {
     try {
-      console.log(`🎯 Resolving event ${eventId}: "${eventData.name}"`);
+      console.log(`🎯 Resolving event ${eventId} on ${eventData.networkConfig.name}: "${eventData.name}"`);
       console.log(`📊 Outcomes: ${eventData.outcomes.join(", ")}`);
+
+      // Get the correct contract for this network
+      const contract = this.contracts[eventData.networkName];
 
       // AI-powered resolution logic
       const winningOutcome = await this.getAIResolution(eventData);
@@ -103,13 +129,13 @@ class WinCoinsOracle {
       );
 
       // Estimate gas before sending transaction
-      const gasEstimate = await this.contract.estimateGas.resolveEvent(
+      const gasEstimate = await contract.estimateGas.resolveEvent(
         eventId,
         winningOutcome
       );
       console.log(`⛽ Estimated gas: ${gasEstimate.toString()}`);
 
-      const tx = await this.contract.resolveEvent(eventId, winningOutcome, {
+      const tx = await contract.resolveEvent(eventId, winningOutcome, {
         gasLimit: gasEstimate.mul(120).div(100), // Add 20% buffer
       });
 

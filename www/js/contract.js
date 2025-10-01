@@ -104,6 +104,34 @@ class WinCoinsContract {
     }
   }
 
+  async refreshProvider() {
+    // Force MetaMask to refresh its internal state
+    if (typeof window.ethereum !== "undefined") {
+      try {
+        // Force MetaMask to refresh by requesting accounts again
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        // Create completely new provider instance
+        this.provider = new ethers.providers.Web3Provider(window.ethereum);
+      } catch (error) {
+        console.warn('Failed to refresh MetaMask, using JsonRpcProvider fallback');
+        // Fallback to direct RPC
+        this.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+      }
+    } else {
+      const firstNetwork = Object.values(NETWORKS)[0];
+      this.provider = new ethers.providers.JsonRpcProvider(
+        firstNetwork.rpcUrls[0]
+      );
+    }
+    
+    // Recreate contract with fresh provider
+    this.contract = new ethers.Contract(
+      this.contractAddress,
+      this.contractABI,
+      this.signer || this.provider
+    );
+  }
+
   async getBalance() {
     if (this.userAddress) {
       const balance = await this.provider.getBalance(this.userAddress);
@@ -240,7 +268,7 @@ class WinCoinsContract {
   async getEventDetails(eventId) {
     try {
       const details = await this.contract.getEventDetails(eventId);
-      return {
+      const eventData = {
         name: details[0],
         outcomes: details[1],
         creator: details[2],
@@ -253,6 +281,17 @@ class WinCoinsContract {
         resolvedTimestamp: details[9].toNumber(),
         unclaimedWinningsCollected: details[10],
       };
+      
+      // Debug logging
+      console.log(`📋 Event ${eventId} details:`, {
+        name: eventData.name,
+        isResolved: eventData.isResolved,
+        isCancelled: eventData.isCancelled,
+        oracle: eventData.oracle,
+        winningOutcome: eventData.winningOutcome
+      });
+      
+      return eventData;
     } catch (error) {
       console.error("Failed to get event details:", error);
       return null;
@@ -312,6 +351,7 @@ class WinCoinsContract {
   async getAllEvents() {
     try {
       const nextEventId = await this.getNextEventId();
+      console.log(`🔍 Getting ${nextEventId} events from contract:`, this.contractAddress);
       const events = [];
 
       for (let i = 0; i < nextEventId; i++) {
@@ -321,6 +361,14 @@ class WinCoinsContract {
           events.push(eventDetails);
         }
       }
+
+      console.log(`📊 Total events loaded: ${events.length}`);
+      console.log(`🎯 Events summary:`, events.map(e => ({
+        id: e.id,
+        name: e.name,
+        isResolved: e.isResolved,
+        oracle: e.oracle
+      })));
 
       return events;
     } catch (error) {

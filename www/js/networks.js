@@ -59,7 +59,7 @@ const NETWORKS = {
       "wss://wss.api.moonbeam.network",
     ],
     blockExplorerUrls: ["https://moonscan.io"],
-    contractAddress: "0x131B0A5622640A00052E14DBB92b2f0BA1037A80",
+    contractAddress: "0x3a7F8a6a5a6E0E5961CFe699af5C13d608440939",
     faucetUrl: null,
     testnet: false,
   },
@@ -93,7 +93,7 @@ const NETWORKS = {
     },
     rpcUrls: ["http://localhost:8545"],
     blockExplorerUrls: null,
-    contractAddress: "0x5FbDB2315678afecb367f032d93F642f64180aa3", // Set during deployment or web-modal.
+    contractAddress: '0x3a7F8a6a5a6E0E5961CFe699af5C13d608440939', // Set during deployment or web-modal.
     faucetUrl: null,
     testnet: true,
   },
