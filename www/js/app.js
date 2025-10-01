@@ -148,8 +148,8 @@ class WinCoinsApp {
     }
 
     setupDarkMode() {
-        // Check for saved theme preference or default to light mode.
-        const savedTheme = localStorage.getItem('theme') || 'light';
+        // Check for saved theme preference or default to dark mode for cyberpunk aesthetic.
+        const savedTheme = localStorage.getItem('theme') || 'dark';
         this.setTheme(savedTheme);
     }
 

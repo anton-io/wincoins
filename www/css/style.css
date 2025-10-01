@@ -27,28 +27,54 @@
   --glow-terminal: 0 0 10px currentColor, inset 0 0 10px rgba(0, 255, 65, 0.1);
 }
 
+/* Light mode colors - Cyberpunk Light Theme */
+[data-theme="light"] {
+  --bg-primary: #f0f8ff;
+  --bg-secondary: #e1f0ff;
+  --bg-tertiary: #d1e8ff;
+  --text-primary: #0066cc;
+  --text-secondary: #004499;
+  --text-muted: #6699cc;
+  --border-light: #0099ff;
+  --border-medium: #0077cc;
+  --accent-primary: #0099ff;
+  --accent-primary-hover: #0077cc;
+  --accent-success: #00aa44;
+  --accent-success-hover: #008833;
+  --accent-warning: #ff8800;
+  --accent-error: #cc0033;
+  --accent-error-hover: #aa0022;
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --glow-primary: 0 0 15px rgb(0 153 255 / 0.4), 0 0 30px rgb(0 153 255 / 0.2);
+  --glow-success: 0 0 15px rgb(0 170 68 / 0.4), 0 0 30px rgb(0 170 68 / 0.2);
+  --glow-terminal: 0 0 8px currentColor, inset 0 0 8px rgba(0, 153, 255, 0.1);
+}
+
 /* Dark mode colors - Enhanced Crypto Theme */
 [data-theme="dark"] {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #111118;
-  --bg-tertiary: #1a1a24;
-  --text-primary: #ffffff;
-  --text-secondary: #e2e8f0;
-  --text-muted: #64748b;
-  --border-light: #2a2a3e;
-  --border-medium: #3a3a52;
+  --bg-primary: #000008;
+  --bg-secondary: #0d0d15;
+  --bg-tertiary: #151520;
+  --text-primary: #00ff41;
+  --text-secondary: #00d4ff;
+  --text-muted: #666680;
+  --border-light: #00ff41;
+  --border-medium: #00d4ff;
   --accent-primary: #00d4ff;
   --accent-primary-hover: #33ddff;
-  --accent-success: #00ff88;
-  --accent-success-hover: #33ff99;
-  --accent-warning: #ff9500;
-  --accent-error: #ff4757;
-  --accent-error-hover: #ff6b7a;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.7), 0 4px 6px -4px rgb(0 0 0 / 0.7);
-  --glow-primary: 0 0 20px rgb(0 212 255 / 0.3);
-  --glow-success: 0 0 20px rgb(0 255 136 / 0.3);
+  --accent-success: #00ff41;
+  --accent-success-hover: #33ff66;
+  --accent-warning: #ffaa00;
+  --accent-error: #ff0040;
+  --accent-error-hover: #ff3366;
+  --shadow-sm: 0 0 10px rgb(0 255 65 / 0.3);
+  --shadow-md: 0 0 20px rgb(0 212 255 / 0.4);
+  --shadow-lg: 0 0 30px rgb(0 255 65 / 0.5);
+  --glow-primary: 0 0 20px rgb(0 212 255 / 0.6), 0 0 40px rgb(0 212 255 / 0.4);
+  --glow-success: 0 0 20px rgb(0 255 65 / 0.6), 0 0 40px rgb(0 255 65 / 0.4);
+  --glow-terminal: 0 0 10px currentColor, inset 0 0 10px rgba(0, 255, 65, 0.1);
 }
 
 /* Reset and Base Styles */
@@ -60,6 +86,18 @@
 
 body {
   font-family: 'JetBrains Mono', 'Space Mono', 'Courier New', monospace;
+  background: var(--bg-primary);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  line-height: 1.4;
+  transition: all 0.3s ease;
+  min-height: 100vh;
+  position: relative;
+  text-shadow: 0 0 5px currentColor;
+}
+
+/* Dark theme background */
+[data-theme="dark"] body {
   background: 
     repeating-linear-gradient(
       90deg,
@@ -76,13 +114,27 @@ body {
       rgba(0, 212, 255, 0.02) 4px
     ),
     radial-gradient(ellipse at center, #000008 0%, #000000 100%);
-  background-attachment: fixed;
-  color: var(--text-primary);
-  line-height: 1.4;
-  transition: all 0.3s ease;
-  min-height: 100vh;
-  position: relative;
-  text-shadow: 0 0 5px currentColor;
+}
+
+/* Light theme background */
+[data-theme="light"] body {
+  background: 
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 153, 255, 0.03) 2px,
+      rgba(0, 153, 255, 0.03) 4px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 170, 68, 0.03) 2px,
+      rgba(0, 170, 68, 0.03) 4px
+    ),
+    radial-gradient(ellipse at center, #f0f8ff 0%, #e6f3ff 100%);
+  text-shadow: 0 0 3px currentColor;
 }
 
 /* Matrix-style scan lines */
@@ -93,6 +145,13 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  animation: scanlines 0.1s linear infinite;
+}
+
+/* Dark theme scan lines */
+[data-theme="dark"] body::before {
   background: repeating-linear-gradient(
     0deg,
     transparent,
@@ -100,9 +159,17 @@ body::before {
     rgba(0, 255, 65, 0.03) 2px,
     rgba(0, 255, 65, 0.03) 4px
   );
-  pointer-events: none;
-  z-index: 1000;
-  animation: scanlines 0.1s linear infinite;
+}
+
+/* Light theme scan lines */
+[data-theme="light"] body::before {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 153, 255, 0.05) 2px,
+    rgba(0, 153, 255, 0.05) 4px
+  );
 }
 
 @keyframes scanlines {
@@ -389,21 +456,47 @@ header {
   transform: translateY(-1px);
 }
 
-/* Fixed Dark Mode Toggle */
+/* Cyberpunk Dark Mode Toggle */
 .dark-mode-fixed {
   position: fixed !important;
   top: 20px;
   right: 20px;
   z-index: 1000;
-  background-color: var(--bg-secondary);
+  background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
   backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), var(--glow-primary);
+  border: 2px solid var(--accent-primary);
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  font-size: 1.2rem;
+  width: 50px;
+  height: 50px;
 }
 
 .dark-mode-fixed:hover {
-  background-color: var(--bg-tertiary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-lg);
+  background: linear-gradient(135deg, var(--bg-tertiary), var(--accent-primary));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--glow-primary), 0 0 25px var(--accent-primary);
+}
+
+.dark-mode-fixed::before {
+  content: '[';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  color: var(--accent-success);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+
+.dark-mode-fixed::after {
+  content: ']';
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  color: var(--accent-success);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
 }
 
 .icon-moon {
@@ -484,6 +577,7 @@ main {
 
 .tab-content {
   display: none;
+  padding-top: 20px;
 }
 
 .tab-content.active {
