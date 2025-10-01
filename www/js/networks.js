@@ -24,32 +24,30 @@ const NETWORKS = {
         faucetUrl: null,
         testnet: false
     },
-    // Celo Alfajores Testnet
-    celoAlfajores: {
-        chainId: '0xaef3', // 44787 in hex
-        chainName: 'Celo Alfajores',
+    // Celo Sepolia Testnet.
+    celoSepolia: {
+        chainId: '0xb612', // 46610 in hex.
+        chainName: 'Celo Sepolia',
         nativeCurrency: {
             name: 'CELO',
             symbol: 'CELO',
             decimals: 18
         },
         rpcUrls: [
-            'https://alfajores-forno.celo-testnet.org',
-            'wss://alfajores-forno.celo-testnet.org/ws',
-            'https://celo-alfajores.drpc.org',
-            'wss://celo-alfajores.drpc.org'
+            'https://celo-sepolia.drpc.org',
+            'wss://celo-sepolia.drpc.org'
         ],
         blockExplorerUrls: [
-            'https://celo-alfajores.blockscout.com',
-            'https://alfajores.celoscan.io'
+            'https://celo-sepolia.blockscout.com',
+            'https://sepolia.celoscan.io'
         ],
-        contractAddress: '0x131B0A5622640A00052E14DBB92b2f0BA1037A80',
-        faucetUrl: 'https://faucet.celo.org/alfajores',
+        contractAddress: '0x1120396991A9eB527a886D4025F6E7A82471F537',
+        faucetUrl: 'https://faucet.celo.org/sepolia',
         testnet: true
     },
-    // Moonbeam Mainnet
+    // Moonbeam Mainnet.
     moonbeam: {
-        chainId: '0x504', // 1284 in hex
+        chainId: '0x504', // 1284 in hex.
         chainName: 'Moonbeam Mainnet',
         nativeCurrency: {
             name: 'Glimmer',
@@ -66,9 +64,9 @@ const NETWORKS = {
         faucetUrl: null,
         testnet: false
     },
-    // Moonbase Alpha Testnet
+    // Moonbase Alpha Testnet.
     moonbaseAlpha: {
-        chainId: '0x507', // 1287 in hex
+        chainId: '0x507', // 1287 in hex.
         chainName: 'Moonbase Alpha',
         nativeCurrency: {
             name: 'DEV',
@@ -85,9 +83,9 @@ const NETWORKS = {
         faucetUrl: 'https://apps.moonbeam.network/moonbase-alpha/faucet',
         testnet: true
     },
-    // Local Development
+    // Local Development.
     localhost: {
-        chainId: '0x539', // 1337 in hex
+        chainId: '0x539', // 1337 in hex.
         chainName: 'Hardhat Local',
         nativeCurrency: {
             name: 'Ethereum',
@@ -102,29 +100,29 @@ const NETWORKS = {
     }
 };
 
-// Network utilities
+// Network utilities.
 const NetworkUtils = {
     /**
-     * Get network configuration by chain ID
-     * @param {string} chainId - Chain ID in hex format (e.g., '0x1')
-     * @returns {object|null} Network configuration or null if not found
+     * Get network configuration by chain ID.
+     * @param {string} chainId - Chain ID in hex format (e.g., '0x1').
+     * @returns {object|null} Network configuration or null if not found.
      */
     getNetworkByChainId(chainId) {
         return Object.values(NETWORKS).find(network => network.chainId === chainId) || null;
     },
 
     /**
-     * Get network configuration by name
-     * @param {string} name - Network name (e.g., 'mainnet', 'sepolia')
-     * @returns {object|null} Network configuration or null if not found
+     * Get network configuration by name.
+     * @param {string} name - Network name (e.g., 'mainnet', 'sepolia').
+     * @returns {object|null} Network configuration or null if not found.
      */
     getNetworkByName(name) {
         return NETWORKS[name] || null;
     },
 
     /**
-     * Get all testnet configurations
-     * @returns {object[]} Array of testnet configurations
+     * Get all testnet configurations.
+     * @returns {object[]} Array of testnet configurations.
      */
     getTestnets() {
         return Object.entries(NETWORKS)
@@ -133,8 +131,8 @@ const NetworkUtils = {
     },
 
     /**
-     * Get all mainnet configurations
-     * @returns {object[]} Array of mainnet configurations
+     * Get all mainnet configurations.
+     * @returns {object[]} Array of mainnet configurations.
      */
     getMainnets() {
         return Object.entries(NETWORKS)
@@ -143,17 +141,17 @@ const NetworkUtils = {
     },
 
     /**
-     * Check if a chain ID is supported
-     * @param {string} chainId - Chain ID in hex format
-     * @returns {boolean} True if supported, false otherwise
+     * Check if a chain ID is supported.
+     * @param {string} chainId - Chain ID in hex format.
+     * @returns {boolean} True if supported, false otherwise.
      */
     isSupported(chainId) {
         return this.getNetworkByChainId(chainId) !== null;
     },
 
     /**
-     * Get current network from MetaMask
-     * @returns {Promise<object|null>} Current network configuration or null
+     * Get current network from MetaMask.
+     * @returns {Promise<object|null>} Current network configuration or null.
      */
     async getCurrentNetwork() {
         if (typeof window.ethereum === 'undefined') return null;
@@ -168,9 +166,9 @@ const NetworkUtils = {
     },
 
     /**
-     * Switch to a specific network
-     * @param {string} networkName - Network name (e.g., 'mainnet', 'sepolia')
-     * @returns {Promise<boolean>} True if successful, false otherwise
+     * Switch to a specific network.
+     * @param {string} networkName - Network name (e.g., 'mainnet', 'sepolia').
+     * @returns {Promise<boolean>} True if successful, false otherwise.
      */
     async switchNetwork(networkName) {
         const network = this.getNetworkByName(networkName);
@@ -185,14 +183,14 @@ const NetworkUtils = {
         }
 
         try {
-            // Try to switch to the network
+            // Try to switch to the network.
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: network.chainId }],
             });
             return true;
         } catch (switchError) {
-            // If the network doesn't exist in MetaMask, add it
+            // If the network doesn't exist in MetaMask, add it.
             if (switchError.code === 4902) {
                 try {
                     await window.ethereum.request({
@@ -218,9 +216,9 @@ const NetworkUtils = {
     },
 
     /**
-     * Set contract address for a specific network
-     * @param {string} networkName - Network name
-     * @param {string} contractAddress - Contract address
+     * Set contract address for a specific network.
+     * @param {string} networkName - Network name.
+     * @param {string} contractAddress - Contract address.
      */
     setContractAddress(networkName, contractAddress) {
         if (NETWORKS[networkName]) {
@@ -229,9 +227,9 @@ const NetworkUtils = {
     },
 
     /**
-     * Get contract address for a specific network
-     * @param {string} networkName - Network name
-     * @returns {string|null} Contract address or null if not set
+     * Get contract address for a specific network.
+     * @param {string} networkName - Network name.
+     * @returns {string|null} Contract address or null if not set.
      */
     getContractAddress(networkName) {
         const network = this.getNetworkByName(networkName);
@@ -239,7 +237,7 @@ const NetworkUtils = {
     }
 };
 
-// Export for use in other files
+// Export for use in other files.
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { NETWORKS, NetworkUtils };
 } else {
