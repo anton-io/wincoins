@@ -886,6 +886,7 @@ input[type="datetime-local"] {
 .prediction-info h4 {
   color: var(--text-primary);
   margin-bottom: 12px;
+  overflow: hidden;
 }
 
 .prediction-info p {
