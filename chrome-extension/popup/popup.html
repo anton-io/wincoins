@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 300px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1f1925;
+      color: #ffffff;
+      margin: 0;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .logo {
+      font-size: 18px;
+      font-weight: 600;
+      color: #9147ff;
+      margin-bottom: 8px;
+    }
+    
+    .subtitle {
+      font-size: 12px;
+      color: #adadb8;
+    }
+    
+    .status {
+      background: rgba(145, 71, 255, 0.1);
+      border: 1px solid rgba(145, 71, 255, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .status-title {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    
+    .status-value {
+      font-size: 12px;
+      color: #adadb8;
+    }
+    
+    .connected {
+      color: #00f5ff;
+    }
+    
+    .disconnected {
+      color: #ff6b6b;
+    }
+    
+    .settings {
+      margin-top: 16px;
+    }
+    
+    .setting-item {
+      margin-bottom: 12px;
+    }
+    
+    .setting-label {
+      font-size: 12px;
+      color: #adadb8;
+      margin-bottom: 4px;
+    }
+    
+    .setting-input {
+      width: 100%;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: #ffffff;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 10px;
+      background: #9147ff;
+      border: none;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .btn:hover {
+      background: #a855f7;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">🎯 WinCoins Live</div>
+    <div class="subtitle">Real-time betting on streams</div>
+  </div>
+  
+  <div class="status">
+    <div class="status-title">Connection Status</div>
+    <div class="status-value" id="connection-status">Checking...</div>
+  </div>
+  
+  <div class="status">
+    <div class="status-title">Active Events</div>
+    <div class="status-value" id="active-events">Loading...</div>
+  </div>
+  
+  <div class="settings">
+    <div class="setting-item">
+      <div class="setting-label">Contract Address</div>
+      <input type="text" class="setting-input" id="contract-address" 
+             placeholder="0x..." maxlength="42">
+    </div>
+    
+    <div class="setting-item">
+      <button class="btn" id="save-address-btn">Save Contract Address</button>
+    </div>
+    
+    <div class="setting-item">
+      <div class="setting-label">Network</div>
+      <input type="text" class="setting-input" value="Localhost (Hardhat)" readonly>
+    </div>
+    
+    <button class="btn" id="refresh-btn">Refresh Status</button>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

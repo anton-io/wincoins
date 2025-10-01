@@ -1,0 +1,263 @@
+/* WinCoins Betting Widget - Twitch Theme */
+#wincoins-betting-widget {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  background: linear-gradient(135deg, #1f1925 0%, #2c1810 100%);
+  border: 2px solid #9147ff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(145, 71, 255, 0.3);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #ffffff;
+  z-index: 2147483647;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  user-select: none;
+}
+
+#wincoins-betting-widget.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Header */
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid rgba(145, 71, 255, 0.2);
+}
+
+.event-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #adadb8;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  background: rgba(145, 71, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Countdown */
+.countdown-container {
+  padding: 16px;
+}
+
+.countdown-bar {
+  background: rgba(145, 71, 255, 0.1);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.countdown-fill {
+  background: linear-gradient(90deg, #9147ff 0%, #ff6b6b 100%);
+  height: 100%;
+  transition: width 1s ease;
+  border-radius: 4px;
+}
+
+.countdown-text {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #adadb8;
+}
+
+/* Outcomes */
+.outcomes-container {
+  padding: 0 16px 16px;
+}
+
+.outcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(145, 71, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.outcome:hover {
+  background: rgba(145, 71, 255, 0.1);
+  border-color: #9147ff;
+}
+
+.outcome.selected {
+  background: rgba(145, 71, 255, 0.2);
+  border-color: #9147ff;
+  box-shadow: 0 0 0 2px rgba(145, 71, 255, 0.3);
+}
+
+.outcome-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outcome-percentage {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00f5ff;
+  background: rgba(0, 245, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 12px;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Bet Controls */
+.bet-controls {
+  padding: 16px;
+  border-top: 1px solid rgba(145, 71, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 10px 10px;
+}
+
+.bet-amounts {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bet-btn {
+  flex: 1;
+  padding: 10px;
+  background: rgba(145, 71, 255, 0.1);
+  border: 1px solid rgba(145, 71, 255, 0.3);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bet-btn:hover {
+  background: rgba(145, 71, 255, 0.2);
+  border-color: #9147ff;
+}
+
+.bet-btn.selected {
+  background: #9147ff;
+  border-color: #9147ff;
+  box-shadow: 0 2px 8px rgba(145, 71, 255, 0.4);
+}
+
+.selected-outcome {
+  font-size: 12px;
+  color: #adadb8;
+  margin-bottom: 12px;
+  text-align: center;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.place-bet-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #9147ff 0%, #7c3aed 100%);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.place-bet-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+  box-shadow: 0 4px 16px rgba(145, 71, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.place-bet-btn:disabled {
+  background: rgba(145, 71, 255, 0.3);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Bet Confirmation */
+.bet-confirmation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  border: 2px solid #00f5ff;
+  animation: fadeIn 0.3s ease;
+}
+
+.tx-hash {
+  font-size: 11px;
+  color: #adadb8;
+  margin-top: 8px;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  #wincoins-betting-widget {
+    width: 300px;
+    top: 10px;
+    right: 10px;
+  }
+}
+
+/* Animation for pool updates */
+.outcome-percentage {
+  transition: all 0.3s ease;
+}
+
+.outcome-percentage.updated {
+  animation: pulse 0.5s ease;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); background: rgba(0, 245, 255, 0.3); }
+  100% { transform: scale(1); }
+}
