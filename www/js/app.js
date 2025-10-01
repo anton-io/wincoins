@@ -1199,12 +1199,12 @@ class WinCoinsApp {
                             <h4>${event.name}</h4>
                             <p>Total Pool: ${event.totalPoolAmount} ETH</p>
                             <p>Status: ${statusText}</p>
+                            ${canCancel ? `
+                                <button class="btn btn-danger btn-small" onclick="app.cancelEvent(${event.id})" style="margin-top: 8px;">
+                                    Cancel Event
+                                </button>
+                            ` : ''}
                         </div>
-                        ${canCancel ? `
-                            <button class="btn btn-danger btn-small" onclick="app.cancelEvent(${event.id})">
-                                Cancel Event
-                            </button>
-                        ` : ''}
                     </div>
 
                     ${canResolve ? `
