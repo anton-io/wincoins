@@ -11,12 +11,14 @@ const mimeTypes = {
     '.css': 'text/css',
     '.js': 'application/javascript',
     '.json': 'application/json',
+    '.pdf': 'application/pdf',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.gif': 'image/gif',
     '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon'
+    '.ico': 'image/x-icon',
+    '.mp4': 'video/mp4'
 };
 
 const PORT = process.env.PORT || 8090;
