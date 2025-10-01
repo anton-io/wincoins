@@ -2,18 +2,18 @@
 const ORACLE_ADDRESSES = {
   "default-oracle": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", // Coming soon
   "chess-oracle": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", // Coming soon
-  "ai-agent-oracle": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", // AI Oracle (OpenAI powered)
+  "ai-agent-oracle": "0x773c1A59aE833eE7E36AF983379EA0a93a6f4C71", // AI Oracle (OpenAI powered)
 };
 
 // Main Application Logic.
 class WinCoinsApp {
-    constructor() {
-        this.currentTab = 'events';
-        this.events = [];
-        this.userPredictions = [];
-        this.isConnected = false;
-        this.userAddress = null;
-        this.currentNetworkSymbol = 'ETH'; // Default currency symbol.
+  constructor() {
+    this.currentTab = "events";
+    this.events = [];
+    this.userPredictions = [];
+    this.isConnected = false;
+    this.userAddress = null;
+    this.currentNetworkSymbol = "ETH"; // Default currency symbol.
 
     this.initializeApp();
   }
@@ -381,17 +381,17 @@ class WinCoinsApp {
       const okBtn = document.getElementById("contractAddressOk");
       const cancelBtn = document.getElementById("contractAddressCancel");
 
-            // Show modal with localhost contract address from networks.js if available
-            modal.classList.remove('hidden');
-            input.value = NETWORKS.localhost.contractAddress || '';
-            input.focus();
+      // Show modal with localhost contract address from networks.js if available
+      modal.classList.remove("hidden");
+      input.value = NETWORKS.localhost.contractAddress || "";
+      input.focus();
 
-            const handleOk = () => {
-                const address = input.value.trim();
-                if (address && address.startsWith('0x') && address.length === 42) {
-                    // Set the address in networks configuration
-                    NetworkUtils.setContractAddress('localhost', address);
-                    winCoinsContract.contractAddress = address;
+      const handleOk = () => {
+        const address = input.value.trim();
+        if (address && address.startsWith("0x") && address.length === 42) {
+          // Set the address in networks configuration
+          NetworkUtils.setContractAddress("localhost", address);
+          winCoinsContract.contractAddress = address;
 
           modal.classList.add("hidden");
           this.showNotification("Contract address set successfully", "success");
@@ -641,7 +641,10 @@ class WinCoinsApp {
       if (oracleSelection === "self") {
         oracleAddress = null; // null means creator resolves
       } else if (oracleSelection === "chess-oracle") {
-        this.showNotification("Chess Oracle is coming soon. Please select a different option.", "error");
+        this.showNotification(
+          "Chess Oracle is coming soon. Please select a different option.",
+          "error"
+        );
         return;
       } else if (oracleSelection === "ai-agent-oracle") {
         oracleAddress = ORACLE_ADDRESSES["ai-agent-oracle"];
@@ -703,6 +706,9 @@ class WinCoinsApp {
       document.getElementById("eventsContainer").innerHTML =
         '<div class="loading">Loading events...</div>';
 
+      // Refresh provider to ensure we get latest blockchain state
+      await winCoinsContract.refreshProvider();
+      
       this.events = await winCoinsContract.getAllEvents();
       this.renderEvents();
     } catch (error) {
@@ -1200,12 +1206,15 @@ class WinCoinsApp {
         await this.loadUserPredictions();
       }
 
-            this.closeModal();
-        } catch (error) {
-            console.error('Failed to make prediction:', error);
-            this.showNotification('Failed to make prediction. Please try again.', 'error');
-        }
+      this.closeModal();
+    } catch (error) {
+      console.error("Failed to make prediction:", error);
+      this.showNotification(
+        "Failed to make prediction. Please try again.",
+        "error"
+      );
     }
+  }
 
   async loadUserPredictions() {
     if (!this.isConnected) {
@@ -1476,10 +1485,18 @@ class WinCoinsApp {
 
     const eventsHtml = adminEvents
       .map((event) => {
+        console.log(event.oracle, "tt");
+        // Check if user can resolve this event
+        // User can resolve if:
+        // 1. Event is not resolved/cancelled and past deadline, AND
+        // 2. No oracle is set (oracle is zero address) OR user is the oracle
         const canResolve =
           !event.isResolved &&
           !event.isCancelled &&
-          !winCoinsContract.isEventOpen(event.predictionDeadline);
+          !winCoinsContract.isEventOpen(event.predictionDeadline) &&
+          (event.oracle === "0x0000000000000000000000000000000000000000" ||
+            (this.userAddress &&
+              event.oracle.toLowerCase() === this.userAddress.toLowerCase()));
         const canCancel = !event.isResolved && !event.isCancelled;
         const isOpen =
           !event.isResolved &&
@@ -1493,6 +1510,12 @@ class WinCoinsApp {
           statusText = "Resolved";
         } else if (isOpen) {
           statusText = "Open";
+        } else if (
+          !canResolve &&
+          event.oracle !== "0x0000000000000000000000000000000000000000"
+        ) {
+          // Event is past deadline but user can't resolve because oracle is set
+          statusText = "Waiting for Oracle";
         }
 
         return `

@@ -78,7 +78,7 @@ const NETWORKS = {
       "wss://wss.api.moonbase.moonbeam.network",
     ],
     blockExplorerUrls: ["https://moonbase.moonscan.io"],
-    contractAddress: "0x5cc7c1e9264d0c0743807d6b3178e9f0f676a730",
+    contractAddress: "0x6aE9A2b23BCd94876F555532AfD259CeA97e44a3",
     faucetUrl: "https://apps.moonbeam.network/moonbase-alpha/faucet",
     testnet: true,
   },
