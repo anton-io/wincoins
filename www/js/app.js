@@ -56,7 +56,6 @@ class WinCoinsApp {
 
       this.setupEventListeners();
       this.setupTabNavigation();
-      this.setupDarkMode();
       this.setupDateTimePicker();
       this.setupNetworkSelector();
       this.setupOracleSelector();
@@ -106,11 +105,6 @@ class WinCoinsApp {
         this.closeNetworkDropdown();
       }
     });
-
-    // Dark mode toggle.
-    document
-      .getElementById("darkModeToggle")
-      .addEventListener("click", () => this.toggleDarkMode());
 
     // Event creation form.
     document
@@ -179,36 +173,11 @@ class WinCoinsApp {
     });
   }
 
-  setupDarkMode() {
-    // Check for saved theme preference or default to light mode.
-    const savedTheme = localStorage.getItem("theme") || "light";
-    this.setTheme(savedTheme);
-  }
-
-  toggleDarkMode() {
-    const currentTheme = document.documentElement.getAttribute("data-theme");
-    const newTheme = currentTheme === "dark" ? "light" : "dark";
-    this.setTheme(newTheme);
-  }
-
-  setTheme(theme) {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-
-    // Update aria-label for accessibility.
-    const toggleButton = document.getElementById("darkModeToggle");
-    toggleButton.setAttribute(
-      "aria-label",
-      theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
-    );
-  }
-
   setupDateTimePicker() {
     const dateTimeInput = document.getElementById("predictionDeadline");
 
-    // Set default to 5 minutes from now.
+    // Set default to now.
     const now = new Date();
-    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
 
     // Format for datetime-local input (YYYY-MM-DDTHH:MM) in local time
     const formatLocalDateTime = (date) => {
@@ -220,7 +189,7 @@ class WinCoinsApp {
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
-    dateTimeInput.value = formatLocalDateTime(fiveMinutesFromNow);
+    dateTimeInput.value = formatLocalDateTime(now);
     dateTimeInput.min = formatLocalDateTime(now);
   }
 
@@ -686,7 +655,23 @@ class WinCoinsApp {
           `Event created successfully! Event ID: ${eventId}`,
           "success"
         );
+
+        // Reset the form
         document.getElementById("createEventForm").reset();
+
+        // Reset the deadline to now
+        const now = new Date();
+        const formatLocalDateTime = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          const hours = String(date.getHours()).padStart(2, "0");
+          const minutes = String(date.getMinutes()).padStart(2, "0");
+          return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
+        document.getElementById("predictionDeadline").value = formatLocalDateTime(now);
+        document.getElementById("predictionDeadline").min = formatLocalDateTime(now);
+
         await this.loadEvents();
         await this.loadAdminEvents();
       } else {
@@ -744,6 +729,9 @@ class WinCoinsApp {
       return;
     }
 
+    // Reverse sort so newest events appear first (highest ID first)
+    filteredEvents.sort((a, b) => b.id - a.id);
+
     // Generate simplified cards.
     const eventCards = filteredEvents.map((event) =>
       this.renderEventCard(event)
@@ -782,7 +770,7 @@ class WinCoinsApp {
       cardClass = "resolved";
     } else if (isExpired) {
       statusClass = "status-expired";
-      statusText = "Predictions Closed";
+      statusText = "Deadline Passed";
       cardClass = "expired";
     }
 
@@ -936,7 +924,7 @@ class WinCoinsApp {
                             ? "Resolved"
                             : isOpen
                             ? "Open for Predictions"
-                            : "Predictions Closed"
+                            : "Deadline Passed"
                         }
                     </span>
                     <span class="event-deadline-modal">
@@ -1242,7 +1230,10 @@ class WinCoinsApp {
       return;
     }
 
-    container.innerHTML = this.userPredictions
+    // Reverse sort so newest predictions appear first (highest event ID first)
+    const sortedPredictions = [...this.userPredictions].sort((a, b) => b.eventId - a.eventId);
+
+    container.innerHTML = sortedPredictions
       .map((prediction) => {
         const canClaim =
           prediction.isResolved && prediction.isWinner && !prediction.isClaimed;
