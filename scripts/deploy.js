@@ -27,6 +27,25 @@ async function main() {
   fs.writeFileSync(contractAddressPath, winCoins.address);
   console.log("Contract address saved to .contract-address");
 
+  // Update the localhost contract address in networks.js
+  const networksJsPath = path.join(__dirname, "../www/js/networks.js");
+  let networksJsContent = fs.readFileSync(networksJsPath, 'utf8');
+
+  // Find and replace the contractAddress in the localhost section
+  // This regex finds: contractAddress: <value>, within the localhost section
+  // Using [\s\S] to match across newlines
+  const regex = /(localhost:\s*\{[\s\S]*?contractAddress:\s*)(?:'[^']*'|"[^"]*"|null)(\s*,)/;
+  const replacement = `$1'${winCoins.address}'$2`;
+
+  if (networksJsContent.match(regex)) {
+    networksJsContent = networksJsContent.replace(regex, replacement);
+    fs.writeFileSync(networksJsPath, networksJsContent);
+    console.log("Contract address injected into networks.js");
+  } else {
+    console.error("ERROR: Could not find localhost contractAddress in networks.js");
+    console.log("Please update networks.js manually with address:", winCoins.address);
+  }
+
   return winCoins.address;
 }
 

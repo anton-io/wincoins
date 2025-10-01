@@ -6,7 +6,7 @@ class WinCoinsApp {
         this.userPredictions = [];
         this.isConnected = false;
         this.userAddress = null;
-        this.currentNetworkSymbol = 'ETH'; // Default currency symbol
+        this.currentNetworkSymbol = 'ETH'; // Default currency symbol.
 
         this.initializeApp();
     }
@@ -316,17 +316,16 @@ class WinCoinsApp {
             const okBtn = document.getElementById('contractAddressOk');
             const cancelBtn = document.getElementById('contractAddressCancel');
 
-            // Show modal
+            // Show modal with localhost contract address from networks.js if available
             modal.classList.remove('hidden');
-            input.value = '';
+            input.value = NETWORKS.localhost.contractAddress || '';
             input.focus();
 
             const handleOk = () => {
                 const address = input.value.trim();
                 if (address && address.startsWith('0x') && address.length === 42) {
-                    // Set the address in networks and localStorage
+                    // Set the address in networks configuration
                     NetworkUtils.setContractAddress('localhost', address);
-                    localStorage.setItem('wincoins_contract_address', address);
                     winCoinsContract.contractAddress = address;
 
                     modal.classList.add('hidden');
@@ -962,9 +961,6 @@ class WinCoinsApp {
             }
 
             this.closeModal();
-
-            // Switch to My Predictions tab to show the new prediction.
-            await this.switchToTab('my-predictions');
         } catch (error) {
             console.error('Failed to make prediction:', error);
             this.showNotification('Failed to make prediction. Please try again.', 'error');

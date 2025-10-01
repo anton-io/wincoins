@@ -44,15 +44,19 @@ class WinCoinsContract {
         if (typeof window.ethereum !== 'undefined') {
             this.provider = new ethers.providers.Web3Provider(window.ethereum);
 
-            // Get default contract address from first network entry
-            const firstNetwork = Object.values(NETWORKS)[0];
-            const defaultAddress = firstNetwork?.contractAddress || null;
-
-            // Try to get contract address from localStorage or use default from networks.js
-            this.contractAddress = localStorage.getItem('wincoins_contract_address') || defaultAddress;
+            // Get contract address from current network configuration
+            try {
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                const network = NetworkUtils.getNetworkByChainId(chainId);
+                this.contractAddress = network?.contractAddress || null;
+            } catch (error) {
+                console.error('Failed to get current network:', error);
+                // Fallback to first network entry
+                const firstNetwork = Object.values(NETWORKS)[0];
+                this.contractAddress = firstNetwork?.contractAddress || null;
+            }
 
             if (this.contractAddress) {
-                localStorage.setItem('wincoins_contract_address', this.contractAddress);
                 this.contract = new ethers.Contract(this.contractAddress, this.contractABI, this.provider);
                 return true;
             }

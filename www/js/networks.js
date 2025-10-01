@@ -96,7 +96,7 @@ const NETWORKS = {
         },
         rpcUrls: ['http://localhost:8545'],
         blockExplorerUrls: null,
-        contractAddress: null, // Set during deployment or web-modal.
+        contractAddress: '0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9', // Set during deployment or web-modal.
         faucetUrl: null,
         testnet: true
     }
