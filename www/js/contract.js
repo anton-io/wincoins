@@ -25,7 +25,11 @@ class WinCoinsContract {
             "function getPoolParticipants(uint256 eventId, uint256 outcomeIndex) external view returns (address[] memory)",
             "function calculatePotentialPayout(uint256 eventId, uint256 outcomeIndex, address user) external view returns (uint256)",
             "function getCreatorFeeBalance(address creator) external view returns (uint256)",
+            "function getTotalCreatorFeesEarned(address creator) external view returns (uint256)",
             "function nextEventId() external view returns (uint256)",
+            "function getUserEventIds(address user) external view returns (uint256[] memory)",
+            "function getUserEventPredictions(address user, uint256 eventId) external view returns (uint256[] memory outcomeIndices, uint256[] memory amounts)",
+            "function getUserClaimInfo(address user, uint256 eventId) external view returns (bool claimed, uint256 amount)",
             "event EventCreated(uint256 indexed eventId, address indexed creator, string name, string[] outcomes, uint256 predictionDeadline)",
             "event PredictionPlaced(uint256 indexed eventId, address indexed predictor, uint256 outcomeIndex, uint256 amount)",
             "event EventResolved(uint256 indexed eventId, uint256 winningOutcome)",
@@ -137,6 +141,17 @@ class WinCoinsContract {
         }
     }
 
+    async getTotalCreatorFeesEarned(creatorAddress = null) {
+        try {
+            const address = creatorAddress || this.userAddress;
+            const total = await this.contract.getTotalCreatorFeesEarned(address);
+            return ethers.utils.formatEther(total);
+        } catch (error) {
+            console.error('Failed to get total creator fees earned:', error);
+            return '0';
+        }
+    }
+
     async withdrawCreatorFees() {
         try {
             const tx = await this.contract.withdrawCreatorFees();
@@ -240,94 +255,44 @@ class WinCoinsContract {
         }
     }
 
-    async queryFilterInBatches(filter, batchSize = 1000) {
-        try {
-            const currentBlock = await this.provider.getBlockNumber();
-            const allEvents = [];
-
-            // Get deployment block from network config
-            let fromBlock = 0;
-            try {
-                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-                const network = NetworkUtils.getNetworkByChainId(chainId);
-                if (network && network.deploymentBlock !== null && network.deploymentBlock !== undefined) {
-                    fromBlock = network.deploymentBlock;
-                } else {
-                    // Fallback: start from 100k blocks ago to avoid scanning entire chain
-                    fromBlock = Math.max(0, currentBlock - 100000);
-                }
-            } catch (error) {
-                console.warn('Could not get deployment block, using fallback', error);
-                fromBlock = Math.max(0, currentBlock - 100000);
-            }
-
-            // Query in batches
-            while (fromBlock <= currentBlock) {
-                const toBlock = Math.min(fromBlock + batchSize - 1, currentBlock);
-
-                try {
-                    const events = await this.contract.queryFilter(filter, fromBlock, toBlock);
-                    allEvents.push(...events);
-                } catch (error) {
-                    console.warn(`Failed to query blocks ${fromBlock}-${toBlock}, trying smaller batch`, error);
-                    // If batch fails, try with smaller batch size
-                    if (batchSize > 100) {
-                        const smallerBatch = await this.queryFilterInBatches(filter, Math.floor(batchSize / 2));
-                        return smallerBatch;
-                    }
-                    throw error;
-                }
-
-                fromBlock = toBlock + 1;
-            }
-
-            return allEvents;
-        } catch (error) {
-            console.error('Failed to query events in batches:', error);
-            // Fallback to querying without block range (may fail on some networks)
-            try {
-                return await this.contract.queryFilter(filter);
-            } catch (fallbackError) {
-                console.error('Fallback query also failed:', fallbackError);
-                return [];
-            }
-        }
-    }
-
     async getUserPredictionsForAllEvents() {
         try {
-            const events = await this.getAllEvents();
+            // Get all event IDs the user has participated in (no event log scanning needed!).
+            const userEventIds = await this.contract.getUserEventIds(this.userAddress);
             const userPredictions = [];
 
-            // Get PayoutClaimed events for this user in batches to avoid block range limits
-            const payoutFilter = this.contract.filters.PayoutClaimed(null, this.userAddress);
-            const payoutEvents = await this.queryFilterInBatches(payoutFilter);
+            // Iterate only through events the user participated in
+            for (const eventIdBN of userEventIds) {
+                const eventId = eventIdBN.toNumber();
+                const event = await this.getEventDetails(eventId);
+                if (!event) continue;
 
-            for (const event of events) {
+                event.id = eventId;
+
+                // Get user's predictions and claim status for this event
+                const [outcomeIndices, amounts] = await this.contract.getUserEventPredictions(this.userAddress, eventId);
+                const [hasClaimed, claimedAmountBN] = await this.contract.getUserClaimInfo(this.userAddress, eventId);
+                const claimedAmount = hasClaimed ? ethers.utils.formatEther(claimedAmountBN) : '0';
+
                 // Check if user claimed refund for cancelled event
-                const refundClaimed = event.isCancelled && payoutEvents.some(pe => pe.args.eventId.toNumber() === event.id);
+                const refundClaimed = event.isCancelled && hasClaimed;
 
-                // For cancelled events, we need to check all outcomes for this user
+                // For cancelled events, aggregate all predictions
                 if (event.isCancelled && !refundClaimed) {
-                    // Check if user has any predictions on this event
                     let totalUserPrediction = new Decimal(0);
-                    for (let i = 0; i < event.outcomes.length; i++) {
-                        const amount = await this.getUserPrediction(event.id, i);
-                        totalUserPrediction = totalUserPrediction.add(new Decimal(amount));
+                    for (const amount of amounts) {
+                        totalUserPrediction = totalUserPrediction.add(new Decimal(ethers.utils.formatEther(amount)));
                     }
 
                     if (totalUserPrediction.gt(0)) {
-                        // Show as single refundable entry
-                        const refundEvent = payoutEvents.find(pe => pe.args.eventId.toNumber() === event.id);
-                        const refundAmount = refundEvent ? ethers.utils.formatEther(refundEvent.args.amount) : '0';
                         userPredictions.push({
                             eventId: event.id,
                             eventName: event.name,
-                            outcomeIndex: -1, // Special indicator for refund
+                            outcomeIndex: -1,
                             outcomeName: 'Event Cancelled - Refund Available',
                             predictionAmount: totalUserPrediction.toString(),
                             potentialPayout: totalUserPrediction.toString(),
-                            actualPayout: refundAmount,
+                            actualPayout: '0',
                             isResolved: false,
                             isCancelled: true,
                             isWinner: false,
@@ -336,18 +301,14 @@ class WinCoinsContract {
                         });
                     }
                 } else if (event.isCancelled && refundClaimed) {
-                    // Show refunded status
-                    const refundEvent = payoutEvents.find(pe => pe.args.eventId.toNumber() === event.id);
-                    const refundAmount = refundEvent ? ethers.utils.formatEther(refundEvent.args.amount) : '0';
-
                     userPredictions.push({
                         eventId: event.id,
                         eventName: event.name,
-                        outcomeIndex: -1, // Special indicator for refund
+                        outcomeIndex: -1,
                         outcomeName: 'Event Cancelled - Refunded',
                         predictionAmount: 'Refunded',
                         potentialPayout: '0',
-                        actualPayout: refundAmount,
+                        actualPayout: claimedAmount,
                         isResolved: false,
                         isCancelled: true,
                         isWinner: false,
@@ -356,44 +317,29 @@ class WinCoinsContract {
                     });
                 } else {
                     // Handle normal resolved/unresolved events
-                    for (let outcomeIndex = 0; outcomeIndex < event.outcomes.length; outcomeIndex++) {
-                        const predictionAmount = await this.getUserPrediction(event.id, outcomeIndex);
-                        const isClaimed = payoutEvents.some(pe =>
-                            pe.args.eventId.toNumber() === event.id &&
-                            event.isResolved &&
-                            event.winningOutcome === outcomeIndex
-                        );
+                    for (let i = 0; i < outcomeIndices.length; i++) {
+                        const outcomeIndex = outcomeIndices[i].toNumber();
+                        const predictionAmount = ethers.utils.formatEther(amounts[i]);
 
-                        // Show prediction if user has/had a bet, or if they claimed from this event.
-                        if (new Decimal(predictionAmount).gt(0) || isClaimed) {
-                            const potentialPayout = await this.calculatePotentialPayout(event.id, outcomeIndex);
+                        // Check if this is a winning outcome and user claimed it
+                        const isWinner = event.isResolved && event.winningOutcome === outcomeIndex;
+                        const isClaimed = hasClaimed && isWinner;
 
-                            // For claimed predictions, get the actual payout amount from the event.
-                            let actualPayout = '0';
-                            if (isClaimed) {
-                                const claimedEvent = payoutEvents.find(pe =>
-                                    pe.args.eventId.toNumber() === event.id &&
-                                    pe.args.winner === this.userAddress
-                                );
-                                if (claimedEvent) {
-                                    actualPayout = ethers.utils.formatEther(claimedEvent.args.amount);
-                                }
-                            }
+                        const potentialPayout = await this.calculatePotentialPayout(event.id, outcomeIndex);
 
-                            userPredictions.push({
-                                eventId: event.id,
-                                eventName: event.name,
-                                outcomeIndex,
-                                outcomeName: event.outcomes[outcomeIndex],
-                                predictionAmount: isClaimed && new Decimal(predictionAmount).eq(0) ? 'Claimed' : predictionAmount,
-                                potentialPayout,
-                                actualPayout,
-                                isResolved: event.isResolved,
-                                isCancelled: false,
-                                isWinner: event.isResolved && event.winningOutcome === outcomeIndex,
-                                isClaimed: isClaimed
-                            });
-                        }
+                        userPredictions.push({
+                            eventId: event.id,
+                            eventName: event.name,
+                            outcomeIndex,
+                            outcomeName: event.outcomes[outcomeIndex],
+                            predictionAmount: isClaimed && new Decimal(predictionAmount).eq(0) ? 'Claimed' : predictionAmount,
+                            potentialPayout,
+                            actualPayout: isClaimed ? claimedAmount : '0',
+                            isResolved: event.isResolved,
+                            isCancelled: false,
+                            isWinner: isWinner,
+                            isClaimed: isClaimed
+                        });
                     }
                 }
             }

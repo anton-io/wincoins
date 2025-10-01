@@ -304,7 +304,7 @@ describe("WinCoins", function () {
 
       await expect(
         winCoins.connect(addr1).claimPayout(eventId)
-      ).to.be.revertedWith("No winning prediction found");
+      ).to.be.revertedWith("Already claimed payout");
     });
   });
 
@@ -916,7 +916,7 @@ describe("WinCoins", function () {
 
       await expect(
         winCoins.connect(addr1).claimPayout(eventId)
-      ).to.be.revertedWith("No refund available");
+      ).to.be.revertedWith("Already claimed refund");
     });
 
     it("Should not allow users with no predictions to claim refunds", async function () {

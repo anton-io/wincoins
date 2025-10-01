@@ -1615,15 +1615,45 @@ h4 {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 12px;
   background: var(--bg-primary);
   border-radius: 8px;
   border: 1px solid var(--border-light);
 }
 
+.fee-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.fee-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+}
+
+.fee-label {
+  font-size: 0.95em;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.fee-value {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
 .fee-balance-info .balance-amount {
-  font-size: 1.2em;
+  font-size: 1.1em;
   font-weight: 700;
   color: var(--accent-success);
   font-family: 'Monaco', 'Menlo', monospace;
@@ -1633,6 +1663,12 @@ h4 {
   .fee-balance-info {
     flex-direction: column;
     gap: 12px;
+  }
+
+  .fee-stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
 }
 

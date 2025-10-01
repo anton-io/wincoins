@@ -27,6 +27,15 @@ contract WinCoins is ReentrancyGuard, Ownable {
     uint256 public nextEventId;
     uint256 public platformFeeBalance;
     mapping(address => uint256) public creatorFeeBalances;
+    mapping(address => uint256) public totalCreatorFeesEarned;
+
+    // Track all events a user has participated in
+    mapping(address => uint256[]) private userEventIds;
+    mapping(address => mapping(uint256 => bool)) private userHasParticipated;
+
+    // Track claimed payouts per user per event
+    mapping(address => mapping(uint256 => bool)) public hasClaimed;
+    mapping(address => mapping(uint256 => uint256)) public claimedAmount;
 
     // 10 years in seconds (10 * 365 * 24 * 60 * 60).
     uint256 public constant UNCLAIMED_TIMEOUT = 315360000;
@@ -153,6 +162,12 @@ contract WinCoins is ReentrancyGuard, Ownable {
             eventData.poolParticipants[outcomeIndex].push(msg.sender);
         }
 
+        // Track user participation in this event
+        if (!userHasParticipated[msg.sender][eventId]) {
+            userEventIds[msg.sender].push(eventId);
+            userHasParticipated[msg.sender][eventId] = true;
+        }
+
         eventData.userPredictions[outcomeIndex][msg.sender] += msg.value;
         eventData.poolAmounts[outcomeIndex] += msg.value;
         eventData.totalPoolAmount += msg.value;
@@ -205,6 +220,7 @@ contract WinCoins is ReentrancyGuard, Ownable {
 
             platformFeeBalance += platformFee;
             creatorFeeBalances[eventData.creator] += creatorFee;
+            totalCreatorFeesEarned[eventData.creator] += creatorFee;
 
             // Reduce total pool amount by total fee.
             eventData.totalPoolAmount -= totalFee;
@@ -237,6 +253,8 @@ contract WinCoins is ReentrancyGuard, Ownable {
     }
 
     function _claimRefund(uint256 eventId, Event storage eventData) private {
+        require(!hasClaimed[msg.sender][eventId], "Already claimed refund");
+
         uint256 totalRefund = 0;
 
         // Calculate total refund across all outcomes for this user
@@ -251,6 +269,10 @@ contract WinCoins is ReentrancyGuard, Ownable {
         require(totalRefund > 0, "No refund available");
         require(address(this).balance >= totalRefund, "Insufficient contract balance");
 
+        // Mark as claimed
+        hasClaimed[msg.sender][eventId] = true;
+        claimedAmount[msg.sender][eventId] = totalRefund;
+
         (bool success, ) = payable(msg.sender).call{value: totalRefund}("");
         require(success, "Refund transfer failed");
 
@@ -258,6 +280,8 @@ contract WinCoins is ReentrancyGuard, Ownable {
     }
 
     function _claimWinnings(uint256 eventId, Event storage eventData) private {
+        require(!hasClaimed[msg.sender][eventId], "Already claimed payout");
+
         uint256 winningOutcome = eventData.winningOutcome;
         uint256 userPrediction = eventData.userPredictions[winningOutcome][msg.sender];
 
@@ -274,6 +298,10 @@ contract WinCoins is ReentrancyGuard, Ownable {
 
         require(payout > 0, "No payout available");
         require(address(this).balance >= payout, "Insufficient contract balance");
+
+        // Mark as claimed
+        hasClaimed[msg.sender][eventId] = true;
+        claimedAmount[msg.sender][eventId] = payout;
 
         (bool success, ) = payable(msg.sender).call{value: payout}("");
         require(success, "Payout transfer failed");
@@ -392,6 +420,10 @@ contract WinCoins is ReentrancyGuard, Ownable {
         return creatorFeeBalances[creator];
     }
 
+    function getTotalCreatorFeesEarned(address creator) external view returns (uint256) {
+        return totalCreatorFeesEarned[creator];
+    }
+
     function collectUnclaimedWinnings(uint256 eventId)
         external
         onlyOwner
@@ -476,5 +508,58 @@ contract WinCoins is ReentrancyGuard, Ownable {
             canCollect,
             eventData.unclaimedWinningsCollected
         );
+    }
+
+    // Get all event IDs that a user has participated in
+    function getUserEventIds(address user) external view returns (uint256[] memory) {
+        return userEventIds[user];
+    }
+
+    // Get user's prediction details for a specific event
+    function getUserEventPredictions(address user, uint256 eventId)
+        external
+        view
+        eventExists(eventId)
+        returns (
+            uint256[] memory outcomeIndices,
+            uint256[] memory amounts
+        )
+    {
+        Event storage eventData = events[eventId];
+        uint256 outcomeCount = eventData.outcomes.length;
+
+        // First, count how many outcomes the user predicted on
+        uint256 predictionCount = 0;
+        for (uint256 i = 0; i < outcomeCount; i++) {
+            if (eventData.userPredictions[i][user] > 0) {
+                predictionCount++;
+            }
+        }
+
+        // Create arrays of the correct size
+        outcomeIndices = new uint256[](predictionCount);
+        amounts = new uint256[](predictionCount);
+
+        // Fill the arrays
+        uint256 index = 0;
+        for (uint256 i = 0; i < outcomeCount; i++) {
+            if (eventData.userPredictions[i][user] > 0) {
+                outcomeIndices[index] = i;
+                amounts[index] = eventData.userPredictions[i][user];
+                index++;
+            }
+        }
+
+        return (outcomeIndices, amounts);
+    }
+
+    // Get claim status and amount for a user and event
+    function getUserClaimInfo(address user, uint256 eventId)
+        external
+        view
+        eventExists(eventId)
+        returns (bool claimed, uint256 amount)
+    {
+        return (hasClaimed[user][eventId], claimedAmount[user][eventId]);
     }
 }

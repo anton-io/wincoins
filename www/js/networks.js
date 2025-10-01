@@ -21,7 +21,6 @@ const NETWORKS = {
             'https://celoscan.io'
         ],
         contractAddress: '0xc7ccc056407073109240DceF780ea433F0bEEb05',
-        deploymentBlock: 47366704, // Set to actual deployment block for better performance.
         faucetUrl: null,
         testnet: false
     },
@@ -45,7 +44,6 @@ const NETWORKS = {
             'https://alfajores.celoscan.io'
         ],
         contractAddress: '0xc7ccc056407073109240DceF780ea433F0bEEb05',
-        deploymentBlock: 58312148, // Set to actual deployment block for better performance.
         faucetUrl: 'https://faucet.celo.org/alfajores',
         testnet: true
     },
@@ -65,7 +63,6 @@ const NETWORKS = {
         ],
         blockExplorerUrls: ['https://moonscan.io'],
         contractAddress: '0xc7ccc056407073109240DceF780ea433F0bEEb05',
-        deploymentBlock: 12796107, // Set to actual deployment block for better performance.
         faucetUrl: null,
         testnet: false
     },
@@ -85,7 +82,6 @@ const NETWORKS = {
         ],
         blockExplorerUrls: ['https://moonbase.moonscan.io'],
         contractAddress: '0xc7ccc056407073109240DceF780ea433F0bEEb05',
-        deploymentBlock: 13907565, // Set to actual deployment block for better performance.
         faucetUrl: 'https://apps.moonbeam.network/moonbase-alpha/faucet',
         testnet: true
     },
@@ -101,7 +97,6 @@ const NETWORKS = {
         rpcUrls: ['http://localhost:8545'],
         blockExplorerUrls: null,
         contractAddress: null, // Set during deployment or web-modal.
-        deploymentBlock: 0,    // Local network always starts at block 0.
         faucetUrl: null,
         testnet: true
     }

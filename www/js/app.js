@@ -173,9 +173,9 @@ class WinCoinsApp {
     setupDateTimePicker() {
         const dateTimeInput = document.getElementById('predictionDeadline');
 
-        // Set default to 1 hour from now
+        // Set default to 5 minutes from now.
         const now = new Date();
-        const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+        const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
 
         // Format for datetime-local input (YYYY-MM-DDTHH:MM) in local time
         const formatLocalDateTime = (date) => {
@@ -187,7 +187,7 @@ class WinCoinsApp {
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         };
 
-        dateTimeInput.value = formatLocalDateTime(oneHourFromNow);
+        dateTimeInput.value = formatLocalDateTime(fiveMinutesFromNow);
         dateTimeInput.min = formatLocalDateTime(now);
     }
 
@@ -1049,25 +1049,23 @@ class WinCoinsApp {
                 totalUserPrediction = totalUserPrediction.add(new Decimal(amount));
             }
 
-            // Check if user has already claimed refund
-            const payoutFilter = winCoinsContract.contract.filters.PayoutClaimed(eventId, this.userAddress);
-            const payoutEvents = await winCoinsContract.contract.queryFilter(payoutFilter);
-            const hasClaimedRefund = payoutEvents.length > 0;
+            // Check if user has already claimed refund using contract state
+            const [hasClaimedRefund, claimedAmountBN] = await winCoinsContract.contract.getUserClaimInfo(this.userAddress, eventId);
+            const claimedAmount = hasClaimedRefund ? ethers.utils.formatEther(claimedAmountBN) : '0';
+            const currencySymbol = await this.getCurrentCurrencySymbol();
 
             if (hasClaimedRefund) {
-                const refundEvent = payoutEvents[0];
-                const refundAmount = ethers.utils.formatEther(refundEvent.args.amount);
                 refundStatusDiv.innerHTML = `
                     <div class="alert alert-success">
                         <p><strong>✅ Refund Claimed</strong></p>
-                        <p>You have successfully claimed your refund of ${refundAmount} ETH for this cancelled event.</p>
+                        <p>You have successfully claimed your refund of ${claimedAmount} ${currencySymbol} for this cancelled event.</p>
                     </div>
                 `;
             } else if (totalUserPrediction.gt(0)) {
                 refundStatusDiv.innerHTML = `
-                    <p>You have ${totalUserPrediction.toString()} ETH in refundable predictions for this event.</p>
+                    <p>You have ${totalUserPrediction.toString()} ${currencySymbol} in refundable predictions for this event.</p>
                     <button class="btn btn-success" onclick="app.claimPayout(${eventId})">
-                        Claim Refund (${totalUserPrediction.toString()} ETH)
+                        Claim Refund (${totalUserPrediction.toString()} ${currencySymbol})
                     </button>
                 `;
             } else {
@@ -1147,20 +1145,34 @@ class WinCoinsApp {
             return;
         }
 
-        // Get creator's current fee balance
+        // Get creator's current fee balance and total earned
         const creatorFeeBalance = await winCoinsContract.getCreatorFeeBalance();
+        const totalCreatorFeesEarned = await winCoinsContract.getTotalCreatorFeesEarned();
         const hasCreatorFees = new Decimal(creatorFeeBalance).gt(0);
+        const hasEarnedFees = new Decimal(totalCreatorFeesEarned).gt(0);
 
         let creatorFeeSection = '';
-        if (hasCreatorFees) {
+        if (hasEarnedFees) {
+            const currencySymbol = await this.getCurrentCurrencySymbol();
             creatorFeeSection = `
                 <div class="creator-fee-summary">
-                    <h3>💰 Creator Fee Balance</h3>
+                    <h3>💰 Creator Fee Summary</h3>
                     <div class="fee-balance-info">
-                        <span class="balance-amount">${creatorFeeBalance} ETH</span>
+                        <div class="fee-stats">
+                            <div class="fee-stat">
+                                <span class="fee-label">Total Earned:</span>
+                                <span class="fee-value">${totalCreatorFeesEarned} ${currencySymbol}</span>
+                            </div>
+                            <div class="fee-stat">
+                                <span class="fee-label">Available Balance:</span>
+                                <span class="balance-amount">${creatorFeeBalance} ${currencySymbol}</span>
+                            </div>
+                        </div>
+                        ${hasCreatorFees ? `
                         <button class="btn btn-success" onclick="app.withdrawCreatorFees()">
                             Withdraw Fees
                         </button>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -1249,7 +1261,8 @@ class WinCoinsApp {
             if (feeCollectedEvent) {
                 const creatorFeeAmount = ethers.utils.formatEther(feeCollectedEvent.args.creatorFeeAmount);
                 if (new Decimal(creatorFeeAmount).gt(0)) {
-                    creatorFeeMessage = ` You earned ${creatorFeeAmount} ETH in creator fees! 💰`;
+                    const currencySymbol = await this.getCurrentCurrencySymbol();
+                    creatorFeeMessage = ` You earned ${creatorFeeAmount} ${currencySymbol} in creator fees! 💰`;
                 }
             }
 
@@ -1316,6 +1329,7 @@ class WinCoinsApp {
 
         // Use current pool amount for display
         const displayPoolAmount = event.totalPoolAmount;
+        const currencySymbol = await this.getCurrentCurrencySymbol();
 
         modalContent.innerHTML = `
             <div class="modal-header">
@@ -1334,7 +1348,7 @@ class WinCoinsApp {
                     </div>
                     <div class="pool-summary">
                         <span class="pool-label">Total Pool:</span>
-                        <span class="pool-amount">${displayPoolAmount} ETH</span>
+                        <span class="pool-amount">${displayPoolAmount} ${currencySymbol}</span>
                     </div>
                 </div>
 
@@ -1343,15 +1357,15 @@ class WinCoinsApp {
                     <div class="fee-details">
                         <div class="fee-item">
                             <span class="fee-label">Your Creator Fee:</span>
-                            <span class="fee-amount">${creatorFeeAmount} ETH</span>
+                            <span class="fee-amount">${creatorFeeAmount} ${currencySymbol}</span>
                         </div>
                         <div class="fee-item secondary">
                             <span class="fee-label">Platform Fee:</span>
-                            <span class="fee-amount">${platformFeeAmount} ETH</span>
+                            <span class="fee-amount">${platformFeeAmount} ${currencySymbol}</span>
                         </div>
                         <div class="fee-item total">
                             <span class="fee-label">Total Fee (0.1% of winnings):</span>
-                            <span class="fee-amount">${totalFee.toFixed(6)} ETH</span>
+                            <span class="fee-amount">${totalFee.toFixed(6)} ${currencySymbol}</span>
                         </div>
                     </div>
                 </div>
@@ -1359,7 +1373,7 @@ class WinCoinsApp {
                 <div class="creator-balance">
                     <div class="balance-info">
                         <span class="balance-label">Total Accumulated Creator Fees:</span>
-                        <span class="balance-amount">${creatorTotalBalance} ETH</span>
+                        <span class="balance-amount">${creatorTotalBalance} ${currencySymbol}</span>
                     </div>
                     ${new Decimal(creatorTotalBalance).gt(0) ? `
                         <button class="btn btn-success" onclick="app.withdrawCreatorFees()">
@@ -1388,12 +1402,18 @@ class WinCoinsApp {
         try {
             this.showNotification('Withdrawing creator fees... Please confirm the transaction.', 'info');
 
-            await winCoinsContract.withdrawCreatorFees();
+            const receipt = await winCoinsContract.withdrawCreatorFees();
 
-            this.showNotification('Creator fees withdrawn successfully!', 'success');
+            // Get withdrawal amount from event
+            const withdrawEvent = receipt.events.find(e => e.event === 'CreatorFeeWithdrawn');
+            const withdrawnAmount = withdrawEvent ? ethers.utils.formatEther(withdrawEvent.args.amount) : '0';
+            const currencySymbol = await this.getCurrentCurrencySymbol();
 
-            // Update balance and close modal
+            this.showNotification(`Creator fees withdrawn successfully! You received ${withdrawnAmount} ${currencySymbol}`, 'success');
+
+            // Update balance, close modal, and refresh admin events to show updated fee balance
             await this.updateBalance();
+            await this.loadAdminEvents();
             this.closeModal();
 
         } catch (error) {
