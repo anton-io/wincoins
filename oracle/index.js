@@ -6,10 +6,10 @@ require("dotenv").config();
 class WinCoinsOracle {
   constructor() {
     // Parse network configurations
-    this.networks = JSON.parse(process.env.NETWORKS || '{}');
+    this.networks = JSON.parse(process.env.NETWORKS || "{}");
     this.contracts = {};
     this.wallets = {};
-    
+
     // Initialize connections for each network
     const contractABI = JSON.parse(
       fs.readFileSync("./WinCoins.json", "utf8")
@@ -17,24 +17,53 @@ class WinCoinsOracle {
 
     for (const [networkName, config] of Object.entries(this.networks)) {
       console.log(`🌐 Initializing ${config.name} (${networkName})`);
-      
+
       const provider = new ethers.providers.JsonRpcProvider(config.rpc);
-      const wallet = new ethers.Wallet(process.env.ORACLE_PRIVATE_KEY, provider);
-      const contract = new ethers.Contract(config.contract, contractABI, wallet);
-      
+      const wallet = new ethers.Wallet(
+        process.env.ORACLE_PRIVATE_KEY,
+        provider
+      );
+      const contract = new ethers.Contract(
+        config.contract,
+        contractABI,
+        wallet
+      );
+
       this.wallets[networkName] = wallet;
       this.contracts[networkName] = contract;
-      
+
       console.log(`✅ ${config.name}: ${config.contract}`);
     }
 
     this.pollInterval = parseInt(process.env.POLL_INTERVAL) || 30000;
     this.oracleName = process.env.ORACLE_NAME || "default-oracle";
 
-    // Initialize OpenAI client
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    // Initialize both EigenAI and OpenAI clients for fallback support
+    this.eigenAIClient = null;
+    this.openAIClient = null;
+
+    if (process.env.EIGENAI_API_KEY) {
+      console.log("🤖 EigenAI configured as primary AI provider");
+      this.eigenAIClient = new OpenAI({
+        baseURL: "https://eigenai.eigencloud.xyz/v1",
+        defaultHeaders: {
+          "x-api-key": process.env.EIGENAI_API_KEY,
+        },
+      });
+    }
+
+    if (process.env.OPENAI_API_KEY) {
+      console.log("🔄 OpenAI configured as fallback AI provider");
+      this.openAIClient = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+    }
+
+    if (!this.eigenAIClient && !this.openAIClient) {
+      throw new Error(
+        "❌ No AI provider configured! Set EIGENAI_API_KEY or OPENAI_API_KEY"
+      );
+    }
 
     console.log(`🔮 WinCoins AI Oracle Service Started`);
     console.log(`📡 RPC URL: ${process.env.RPC_URL}`);
@@ -45,15 +74,22 @@ class WinCoinsOracle {
 
   async init() {
     try {
-      console.log(`✅ Oracle ${process.env.ORACLE_ADDRESS} is ready to resolve events across multiple networks`);
+      console.log(
+        `✅ Oracle ${process.env.ORACLE_ADDRESS} is ready to resolve events across multiple networks`
+      );
 
       for (const [networkName, config] of Object.entries(this.networks)) {
         try {
           const wallet = this.wallets[networkName];
           const network = await wallet.provider.getNetwork();
-          console.log(`🌐 ${config.name}: Connected (chainId: ${network.chainId})`);
+          console.log(
+            `🌐 ${config.name}: Connected (chainId: ${network.chainId})`
+          );
         } catch (error) {
-          console.error(`❌ Failed to connect to ${config.name}:`, error.message);
+          console.error(
+            `❌ Failed to connect to ${config.name}:`,
+            error.message
+          );
         }
       }
     } catch (error) {
@@ -70,7 +106,7 @@ class WinCoinsOracle {
         console.log(`🔍 Checking ${config.name} for unresolved events...`);
         const contract = this.contracts[networkName];
         const wallet = this.wallets[networkName];
-        
+
         const nextEventId = await contract.nextEventId();
         console.log(`📊 ${config.name} - Total events: ${nextEventId}`);
 
@@ -98,13 +134,14 @@ class WinCoinsOracle {
               name,
               outcomes,
               creator,
-              predictionDeadline: new Date(predictionDeadline.toNumber() * 1000),
+              predictionDeadline: new Date(
+                predictionDeadline.toNumber() * 1000
+              ),
               networkName,
               networkConfig: config,
-          });
+            });
+          }
         }
-      }
-
       } catch (error) {
         console.error(`❌ Error checking ${config.name}:`, error.message);
       }
@@ -113,9 +150,61 @@ class WinCoinsOracle {
     return allUnresolvedEvents;
   }
 
+  async callAIWithFallback(prompt) {
+    const messages = [
+      {
+        role: "system",
+        content:
+          "You are a precise AI oracle that responds only with the outcome index number.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ];
+
+    // Try EigenAI first (if configured)
+    if (this.eigenAIClient) {
+      try {
+        console.log("🤖 Attempting EigenAI call...");
+        const response = await this.eigenAIClient.chat.completions.create({
+          model: "gpt-oss-120b-f16",
+          seed: 42, // Deterministic seed for consistent results
+          messages: messages,
+          max_tokens: 10,
+          temperature: 0.1,
+        });
+        console.log("✅ EigenAI call successful");
+        return response;
+      } catch (error) {
+        console.warn(
+          "⚠️ EigenAI failed, falling back to OpenAI:",
+          error.message
+        );
+      }
+    }
+
+    // Fallback to OpenAI
+    if (this.openAIClient) {
+      console.log("🔄 Using OpenAI fallback...");
+      const response = await this.openAIClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: messages,
+        max_tokens: 10,
+        temperature: 0.1,
+      });
+      console.log("✅ OpenAI fallback successful");
+      return response;
+    }
+
+    throw new Error("❌ Both EigenAI and OpenAI failed or are not configured");
+  }
+
   async resolveEvent(eventId, eventData) {
     try {
-      console.log(`🎯 Resolving event ${eventId} on ${eventData.networkConfig.name}: "${eventData.name}"`);
+      console.log(
+        `🎯 Resolving event ${eventId} on ${eventData.networkConfig.name}: "${eventData.name}"`
+      );
       console.log(`📊 Outcomes: ${eventData.outcomes.join(", ")}`);
 
       // Get the correct contract for this network
@@ -155,12 +244,14 @@ class WinCoinsOracle {
   async getAIResolution(eventData) {
     try {
       console.log(`🤖 Using AI to resolve event: "${eventData.name}"`);
-      
+
       const prompt = `You are an AI oracle for a prediction market. You need to determine the outcome of a prediction event.
 
 Event Title: "${eventData.name}"
 Event Created: ${eventData.predictionDeadline.toISOString()}
-Possible Outcomes: ${eventData.outcomes.map((outcome, i) => `${i}: ${outcome}`).join(', ')}
+Possible Outcomes: ${eventData.outcomes
+        .map((outcome, i) => `${i}: ${outcome}`)
+        .join(", ")}
 
 Please analyze this event and determine which outcome is most likely to be correct based on:
 1. Current real-world information and trends
@@ -171,41 +262,32 @@ Respond ONLY with the number (index) of the correct outcome. For example, if out
 
 Important: You must respond with only a single number corresponding to the outcome index.`;
 
-      const response = await this.openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are a precise AI oracle that responds only with the outcome index number."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        max_tokens: 10,
-        temperature: 0.1,
-      });
+      const response = await this.callAIWithFallback(prompt);
 
       const aiResponse = response.choices[0].message.content.trim();
       console.log(`🤖 AI Response: "${aiResponse}"`);
-      
+
       // Parse the response to get the outcome index
       const outcomeIndex = parseInt(aiResponse);
-      
+
       // Validate the outcome index
-      if (isNaN(outcomeIndex) || outcomeIndex < 0 || outcomeIndex >= eventData.outcomes.length) {
-        console.log(`⚠️  AI response "${aiResponse}" is invalid, falling back to random selection`);
+      if (
+        isNaN(outcomeIndex) ||
+        outcomeIndex < 0 ||
+        outcomeIndex >= eventData.outcomes.length
+      ) {
+        console.log(
+          `⚠️  AI response "${aiResponse}" is invalid, falling back to random selection`
+        );
         return Math.floor(Math.random() * eventData.outcomes.length);
       }
-      
-      console.log(`✅ AI selected outcome ${outcomeIndex}: "${eventData.outcomes[outcomeIndex]}"`);
+
+      console.log(
+        `✅ AI selected outcome ${outcomeIndex}: "${eventData.outcomes[outcomeIndex]}"`
+      );
       return outcomeIndex;
-      
     } catch (error) {
       console.error(`❌ AI resolution failed:`, error.message);
-      console.log(`🎲 Falling back to random selection`);
-      return Math.floor(Math.random() * eventData.outcomes.length);
     }
   }
 
@@ -251,7 +333,6 @@ Important: You must respond with only a single number corresponding to the outco
       this.poll();
     }, this.pollInterval);
   }
-
 }
 
 module.exports = { WinCoinsOracle };
