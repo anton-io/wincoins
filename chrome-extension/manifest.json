@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "WinCoins Live Betting",
+  "version": "1.0.0",
+  "description": "Real-time betting on live streams with WinCoins",
+  
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "alarms",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "*://*/*"
+  ],
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["content.js"],
+      "css": ["widget.css"],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "WinCoins Settings"
+  },
+  
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png", 
+    "128": "assets/icon128.png"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*", "ethers.min.js"],
+      "matches": ["*://*/*"]
+    }
+  ]
+}
