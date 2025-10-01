@@ -20,7 +20,8 @@
   --shadow-md: 0 0 10px rgba(0, 255, 136, 0.4), 0 0 20px rgba(0, 255, 136, 0.2);
   --shadow-lg: 0 0 20px rgba(0, 255, 136, 0.5), 0 0 40px rgba(0, 255, 136, 0.3);
   --glow-primary: 0 0 10px rgba(0, 255, 136, 0.6);
-  --glow-strong: 0 0 15px rgba(0, 255, 136, 0.8), 0 0 30px rgba(0, 255, 136, 0.5);
+  --glow-strong: 0 0 15px rgba(0, 255, 136, 0.8),
+    0 0 30px rgba(0, 255, 136, 0.5);
 }
 
 /* Reset and Base Styles */
@@ -31,20 +32,19 @@
 }
 
 body {
-  font-family: 'Courier New', 'Consolas', 'Monaco', 'Menlo', monospace;
+  font-family: "Courier New", "Consolas", "Monaco", "Menlo", monospace;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
   transition: background-color 0.3s ease, color 0.3s ease;
   text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 255, 136, 0.03) 2px,
-      rgba(0, 255, 136, 0.03) 4px
-    );
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 136, 0.03) 2px,
+    rgba(0, 255, 136, 0.03) 4px
+  );
 }
 
 .container {
@@ -60,6 +60,8 @@ header {
   padding: 24px 0;
   backdrop-filter: blur(8px);
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+  z-index: 100000;
+  position: relative;
 }
 
 /* Header Layout */
@@ -156,7 +158,6 @@ header {
   font-size: 1rem;
 }
 
-
 .network-dropdown-arrow {
   margin-left: 8px;
   font-size: 0.8rem;
@@ -241,7 +242,6 @@ header {
 .network-option.current .network-details {
   color: var(--text-secondary);
 }
-
 
 /* Navigation */
 .tab-nav {
@@ -529,7 +529,8 @@ h4 {
   background: transparent;
 }
 
-.form-group input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+.form-group
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
 
@@ -1415,7 +1416,6 @@ input[type="datetime-local"] {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-
   .network-selector {
     margin-right: unset;
   }
@@ -1426,6 +1426,8 @@ input[type="datetime-local"] {
 
   header {
     padding: 16px 0;
+    z-index: 100000;
+    position: relative;
   }
 
   .header-content {
@@ -1593,11 +1595,13 @@ input[type="datetime-local"] {
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
 }
 
-.winning-outcome, .pool-summary {
+.winning-outcome,
+.pool-summary {
   margin-top: 12px;
 }
 
-.outcome-label, .pool-label {
+.outcome-label,
+.pool-label {
   font-weight: 500;
   color: var(--text-secondary);
   margin-right: 8px;
@@ -1612,7 +1616,7 @@ input[type="datetime-local"] {
 .pool-amount {
   font-weight: 700;
   color: var(--accent-primary);
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
   font-size: 1.1em;
 }
 
@@ -1662,7 +1666,7 @@ input[type="datetime-local"] {
 .fee-amount {
   font-weight: 600;
   color: var(--accent-success);
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
 }
 
 .creator-balance {
@@ -1692,7 +1696,7 @@ input[type="datetime-local"] {
 .balance-amount {
   font-weight: 700;
   color: var(--accent-primary);
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
   font-size: 1.1em;
 }
 
@@ -1776,14 +1780,14 @@ input[type="datetime-local"] {
   font-size: 1.1em;
   font-weight: 700;
   color: var(--text-primary);
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
 }
 
 .fee-balance-info .balance-amount {
   font-size: 1.1em;
   font-weight: 700;
   color: var(--accent-success);
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
 }
 
 @media (max-width: 768px) {
@@ -2160,10 +2164,9 @@ input[type="datetime-local"] {
   margin-top: 8px;
 }
 
-
 /* Other custom styles. */
 
 .link-plain {
-    text-decoration: none;
-    color: inherit;
+  text-decoration: none;
+  color: inherit;
 }
