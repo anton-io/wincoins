@@ -402,36 +402,57 @@ class WinCoinsContract {
           });
         } else {
           // Handle normal resolved/unresolved events
-          for (let i = 0; i < outcomeIndices.length; i++) {
-            const outcomeIndex = outcomeIndices[i].toNumber();
-            const predictionAmount = ethers.utils.formatEther(amounts[i]);
-
-            // Check if this is a winning outcome and user claimed it
-            const isWinner =
-              event.isResolved && event.winningOutcome === outcomeIndex;
-            const isClaimed = hasClaimed && isWinner;
-
-            const potentialPayout = await this.calculatePotentialPayout(
-              event.id,
-              outcomeIndex
-            );
-
+          // If user has claimed, we need to show the winning prediction even if amount is 0
+          if (hasClaimed && event.isResolved) {
+            // User claimed - show the winning prediction
+            const winningOutcome = event.winningOutcome;
             userPredictions.push({
               eventId: event.id,
               eventName: event.name,
-              outcomeIndex,
-              outcomeName: event.outcomes[outcomeIndex],
-              predictionAmount:
-                isClaimed && new Decimal(predictionAmount).eq(0)
-                  ? "Claimed"
-                  : predictionAmount,
-              potentialPayout,
-              actualPayout: isClaimed ? claimedAmount : "0",
+              outcomeIndex: winningOutcome,
+              outcomeName: event.outcomes[winningOutcome],
+              predictionAmount: "Claimed",
+              potentialPayout: "0",
+              actualPayout: claimedAmount,
               isResolved: event.isResolved,
               isCancelled: false,
-              isWinner: isWinner,
-              isClaimed: isClaimed,
+              isWinner: true,
+              isClaimed: true,
             });
+          } else {
+            // User hasn't claimed yet - show all their predictions
+            for (let i = 0; i < outcomeIndices.length; i++) {
+              const outcomeIndex = outcomeIndices[i].toNumber();
+              const predictionAmount = ethers.utils.formatEther(amounts[i]);
+
+              // Skip predictions with 0 amount (shouldn't happen for unclaimed)
+              if (new Decimal(predictionAmount).eq(0)) {
+                continue;
+              }
+
+              // Check if this is a winning outcome
+              const isWinner =
+                event.isResolved && event.winningOutcome === outcomeIndex;
+
+              const potentialPayout = await this.calculatePotentialPayout(
+                event.id,
+                outcomeIndex
+              );
+
+              userPredictions.push({
+                eventId: event.id,
+                eventName: event.name,
+                outcomeIndex,
+                outcomeName: event.outcomes[outcomeIndex],
+                predictionAmount: predictionAmount,
+                potentialPayout,
+                actualPayout: "0",
+                isResolved: event.isResolved,
+                isCancelled: false,
+                isWinner: isWinner,
+                isClaimed: false,
+              });
+            }
           }
         }
       }
