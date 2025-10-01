@@ -28,6 +28,11 @@ module.exports = {
       url: 'https://forno.celo-sepolia.celo-testnet.org',
       chainId: 11142220,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+    },
+    celo: {
+      url: 'https://forno.celo.org',
+      chainId: 42220,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
     }
   },
   paths: {
